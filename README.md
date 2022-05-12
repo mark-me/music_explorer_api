@@ -8,6 +8,6 @@ This repository provides an application to serve the data by allowing to query a
 
 Components of this repository:
 * A Python application that serves an API which allows exploration of the database
-* A Python application that scrapes data to creat/fill the music collection database
+* A Python application that scrapes data to create/fill the music collection database
 * Dockerfile that creates and image for the Python application
 * A conf file for the [swag|https://github.com/linuxserver/docker-swag] reverse proxy
