@@ -1,11 +1,11 @@
 FROM python:3.9
 
-WORKDIR /api
+WORKDIR /app
 
-COPY ./requirements.txt /api/requirements.txt
+COPY ./requirements.txt /app/requirements.txt
 
-RUN pip install --no-cache-dir --upgrade -r /api/requirements.txt
+RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
-COPY ./api /code/api
+COPY ./app /code/app
 
-CMD ["uvicorn", "api.main:api", "--host", "0.0.0.0", "--port", "80", "--proxy-headers"]
+CMD ["uvicorn", "app.main:app", "--proxy-headers", "--host", "0.0.0.0", "--port", "80"]
