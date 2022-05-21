@@ -11,3 +11,21 @@ Components of this repository:
 * A Python application that scrapes data to create/fill the music collection database
 * Dockerfile that creates and image for the Python application
 * A conf file for the [swag|https://github.com/linuxserver/docker-swag] reverse proxy
+
+
+# Creating a virtual environment
+
+## Create venv
+
+```
+pip3 install virtualenv
+virtualenv music_explorer_api
+source music_explorer_api/bin/activate
+pip3 install -r requirements.txt
+```
+
+## Create requirements.txt
+
+```
+pip3 freeze > requirements.txt 
+```
