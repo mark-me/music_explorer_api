@@ -1,9 +1,9 @@
 from typing import Union
 import sqlite3
 from fastapi import FastAPI
-from sqlalchemy.orm import Session
-from . import crud, models, schemas
-from .database import SessionLocal, engine
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
 
 app = FastAPI()
