@@ -8,6 +8,7 @@ app = _fastapi.FastAPI()
 
 _services.create_database()
 
+
 @app.post("/collection_artists/", response_model=_schemas.CollectionArtist)
 def read_collection_artists(
     skip: int=0, 
