@@ -16,5 +16,6 @@ def get_db():
 
 
 def get_collection_artists(db: _orm.Session, skip:int, limit:int):
-    return db.query(_models.CollectionArtist).offset(skip).limit(limit).all()
+    collection_artists = db.query(_models.CollectionArtist).offset(skip).limit(limit).all()
+    return collection_artists
     
