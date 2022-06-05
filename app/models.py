@@ -9,4 +9,14 @@ class CollectionArtist(_database.Base):
 
     id_artist = _sql.Column(_sql.String, primary_key=True)
     name_artist = _sql.Column(_sql.String)
+    url_artist_image = _sql.Column(_sql.String)
     qty_collection_items = _sql.Column(_sql.Integer)
+
+
+class CollectionRelease(_database.Base):
+    __tablename__ = "vw_artist_collection_releases"
+
+    id_artist = _sql.Column(_sql.String, primary_key=True)
+    name_artist = _sql.Column(_sql.String)
+    name_release = _sql.Column(_sql.String, primary_key=True)
+    url_cover = _sql.Column(_sql.String)
