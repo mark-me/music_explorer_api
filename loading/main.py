@@ -18,18 +18,22 @@ def main():
 
     discogs_extractor = _extract.Discogs(name_discogs_user=name_discogs_user, url_discogs_api=url_discogs_api)
     
+    # Load collection item data
     collection_store = _store.Collection(db_file=db_file)
     df_collection_items = discogs_extractor.collection_items()
-    collection_store.items(df_collection_items)
+    collection_store.write_items(df_collection_items)
     
     collection_derive = _derive.Collection(df_releases=df_collection_items)
-    collection_store.artists(collection_derive.artists())
-    collection_store.formats(collection_derive.formats())
-    collection_store.labels(collection_derive.labels())
-    collection_store.genres(collection_derive.genres())
-    collection_store.styles(collection_derive.styles())
+    collection_store.write_artists(collection_derive.artists())
+    collection_store.write_formats(collection_derive.formats())
+    collection_store.write_labels(collection_derive.labels())
+    collection_store.write_genres(collection_derive.genres())
+    collection_store.write_styles(collection_derive.styles())
 
-    print(df_collection_items.info(memory_usage="deep"))
+    del df_collection_items
 
+    
+
+    
 if __name__ == "__main__":
     main()
