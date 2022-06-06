@@ -103,7 +103,7 @@ class Discogs:
         self.session.mount('http://', HTTPAdapter(max_retries=self.retries))
         lst_artists = []
         for index, row in df_artists.iterrows():
-            url_request = row['api_artist'] + "?token=" + token_discogs
+            url_request = row['api_artist'] + "?token=" + self.discogs_token
             try:
                 response = self.session.get(url_request)
                 response.raise_for_status()
