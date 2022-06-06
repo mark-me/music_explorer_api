@@ -37,7 +37,6 @@ def main():
     df_artist_new = collection_store.read_new_artist_id()
     df_artist_new = discogs_extractor.artists(df_artists=df_artist_new)
     artist_store.write_artists(df_artists=df_artist_new)
-    print(df_artist_new.head())
 
     
 if __name__ == "__main__":
