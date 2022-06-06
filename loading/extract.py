@@ -1,5 +1,7 @@
 import requests
 from requests.exceptions import HTTPError
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 import json
 import numpy as np
 import pandas as pd
@@ -7,12 +9,38 @@ import pandas as pd
 import time
 import datetime as dt
 
+DEFAULT_TIMEOUT = 5 # seconds
+
+
+class TimeoutHTTPAdapter(HTTPAdapter):
+    def __init__(self, *args, **kwargs):
+        self.timeout = DEFAULT_TIMEOUT
+        if "timeout" in kwargs:
+            self.timeout = kwargs["timeout"]
+            del kwargs["timeout"]
+        super().__init__(*args, **kwargs)
+
+    def send(self, request, **kwargs):
+        timeout = kwargs.get("timeout")
+        if timeout is None:
+            kwargs["timeout"] = self.timeout
+        return super().send(request, **kwargs)
+
+http = requests.Session()
+
+assert_status_hook = lambda response, *args, **kwargs: response.raise_for_status()
+http.hooks["response"] = [assert_status_hook]
+
+retries = Retry(total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])
+http.mount("https://", TimeoutHTTPAdapter(max_retries=retries))
+
+
 class Discogs:
 
-    def __init__(self, name_discogs_user, url_discogs_api) -> None:
+    def __init__(self, name_discogs_user: str, discogs_token: str, url_discogs_api: str) -> None:
         self.name_discogs_user = name_discogs_user
+        self.discogs_token = discogs_token
         self.url_discogs_api = url_discogs_api
-        pass
 
     def collection_items(self) -> pd.DataFrame:
 
@@ -81,4 +109,17 @@ class Discogs:
         pass
         
     def artists(self, df_artists: pd.DataFrame) -> pd.DataFrame:
-        pass
+        lst_artists = []
+        for index, row in df_artists.iterrows():
+            try:
+                url_request = row['api_artist'] + "?token=" + self.discogs_token
+                response = requests.get(url_request)
+                lst_artists.append(pd.json_normalize(response.json()))
+            except HTTPError as http_err:
+                if response.status_code == 429:
+                    time.sleep(60)
+            except Exception as err:
+                print(f'Other error occurred: {err}') 
+
+        df_artist = pd.concat(lst_artists, ignore_index=True)
+        return(df_artist)

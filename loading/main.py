@@ -16,7 +16,7 @@ def main():
     token_discogs = config['discogs_token']
     db_file = config["db_file"]
 
-    discogs_extractor = _extract.Discogs(name_discogs_user=name_discogs_user, url_discogs_api=url_discogs_api)
+    discogs_extractor = _extract.Discogs(name_discogs_user=name_discogs_user, discogs_token=token_discogs, url_discogs_api=url_discogs_api)
     
     # Load collection item data
     collection_store = _store.Collection(db_file=db_file)
@@ -32,7 +32,12 @@ def main():
 
     del df_collection_items
 
-    
+    # Load artist data
+    artist_store = _store.Artists(db_file=db_file)
+    df_artist_new = collection_store.read_new_artist_id()
+    df_artist_new = discogs_extractor.artists(df_artists=df_artist_new)
+    artist_store.write_artists(df_artists=df_artist_new)
+    print(df_artist_new.head())
 
     
 if __name__ == "__main__":

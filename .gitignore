@@ -129,3 +129,4 @@ dmypy.json
 .pyre/
 app/test.sqlite
 loading/testing.ipynb
+loading/test.py
