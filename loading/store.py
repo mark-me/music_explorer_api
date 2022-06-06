@@ -2,43 +2,50 @@ import sqlite3
 import numpy as np
 import pandas as pd
 
+class DBStorage():
+    def __init__(self, db_file) -> None:
+        self.db_file = db_file  
 
-class Collection():
+    def store_replace(self, df: pd.DataFrame, name_table: str) -> None:
+        db = sqlite3.connect(self.db_file)
+        df.to_sql(name=name_table, con=db, if_exists='replace') 
+        db.close() 
+
+class Collection(DBStorage):
 
     def __init__(self, db_file) -> None:
-        self.db_file = db_file
+        super().__init__(db_file)
 
     def items(self, df_collection_items: pd.DataFrame) -> None:
-
         selected_columns = df_collection_items.columns[~df_collection_items.columns.isin([ "basic_information.thumb", "basic_information.cover_image",\
-                                                                               "basic_information.artists", "basic_information.labels",\
-                                                                               "basic_information.formats", "basic_information.genres",\
-                                                                               "basic_information.styles" ])]
+            "basic_information.artists", "basic_information.labels", "basic_information.formats", "basic_information.genres","basic_information.styles" ])]
         df_collection_items = df_collection_items[selected_columns]
-
-        db = sqlite3.connect(self.db_file)
-        df_collection_items.to_sql(name="collection_items", con=db, if_exists='replace')
-        db.close()
+        self.store_replace(df=df_collection_items, name_table="collection_items")
 
     def artists(self, df_collection_artists: pd.DataFrame) -> None:
-        pass
+        self.store_replace(df=df_collection_artists, name_table="collection_artists")
 
     def formats(self, df_collection_formats: pd.DataFrame) -> None:
-        pass
+        selected_columns = df_collection_formats.columns[~df_collection_formats.columns.isin([ "descriptions" ])]
+        df_collection_formats = df_collection_formats[selected_columns]
+        self.store_replace(df=df_collection_formats, name_table="collection_formats")
 
     def labels(self, df_collection_labels: pd.DataFrame) -> None:
-        pass
+        self.store_replace(df=df_collection_labels, name_table="collection_labels")
 
     def genres(self, df_collection_genres: pd.DataFrame) -> None:
-        pass    
+        self.store_replace(df=df_collection_genres, name_table="collection_genres")  
 
     def styles(self, df_collection_styles: pd.DataFrame) -> None:
-        pass   
+        self.store_replace(df_collection_styles, name_table="collection_styles")    
 
-class Artists():
+    def lowest_value(self, df_lowest_value: pd.DataFrame) -> None:
+        self.store_replace(df_lowest_value, name_table="collection_item_value")
+
+class Artists(DBStorage):
 
     def __init__(self, db_file) -> None:
-        self.db_file = db_file    
+        super().__init__(db_file)  
 
     def artists(self, df_artists: pd.DataFrame) -> None:
         pass

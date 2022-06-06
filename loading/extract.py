@@ -51,22 +51,22 @@ class Discogs:
     
         return(df_collection)
 
-    def lowest_value(self, df_collection_items):
+    def release_lowest_value(self, df_release) -> pd.DataFrame:
 
         query = {'curr_abbr': 'EUR'}
 
-        collection_items_value = []
-        for i in df_collection_items.index:
-            url_request = self.url_discogs_api + "/marketplace/stats/" + str(df_collection_items['id'][i])
+        lst_lowest_value = []
+        for i in df_release.index:
+            url_request = self.url_discogs_api + "/marketplace/stats/" + str(df_release['id'][i])
             try:
                 response = requests.get(url_request, params=query)
                 response.raise_for_status()
 
                 df_item = pd.json_normalize(response.json())
-                df_item['id'] = str(df_collection_items['id'][i])
-                df_item['df_collection_items'] = dt.datetime.now()
+                df_item['id'] = str(df_release['id'][i])
+                df_item['df_release'] = dt.datetime.now()
                 df_item = df_item.loc[:, df_item.columns != 'lowest_price']
-                collection_items_value.append(df_item)
+                lst_lowest_value.append(df_item)
 
             except HTTPError as http_err:
                 if response.status_code == 429:
@@ -74,8 +74,11 @@ class Discogs:
             except Exception as err:
                 print(f'Other error occurred: {err}')
                 
-        df_collection_value = pd.concat(collection_items_value, ignore_index=True)
+        df_collection_value = pd.concat(lst_lowest_value, ignore_index=True)
         return(df_collection_value)
+
+    def release_stats(self, df_release) -> pd.DataFrame:
+        pass
         
     def artists(self, df_artists: pd.DataFrame) -> pd.DataFrame:
         pass
