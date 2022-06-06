@@ -7,7 +7,7 @@ import store as _store
 
 def main():
 
-    with open(r'config.yaml') as file:
+    with open(r'loading/config.yml') as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
 
     url_discogs_api = 'https://api.discogs.com'
@@ -15,9 +15,11 @@ def main():
     token_discogs = config['discogs_token']
     db_file = config["db_file"]
 
+    discogs_extractor = _extract.Discogs(name_discogs_user=name_discogs_user, url_discogs_api=url_discogs_api)
+    collection_store = _store.Collection(db_file=db_file)
+    df_collection_items = discogs_extractor.collection_items()
+    collection_store.items(df_collection_items)
 
-    df_collection_items = _extract.collection_items(name_discogs_user, url_discogs_api)
-    _store.collection_items(df_collection_items, db_file)
 
-
-
+if __name__ == "__main__":
+    main()

@@ -10,13 +10,14 @@ class Collection():
 
     def items(self, df_collection_items: pd.DataFrame) -> None:
 
-        selected_columns = df_collection.columns[~df_collection.columns.isin([ "basic_information.thumb", "basic_information.cover_image",\
-                                                                               "basic_information.artists", "basic_information.labels",\ 
-                                                                               "basic_information.formats", "basic_information.genres", "basic_information.styles"])]
-        df_collection = df_collection[selected_columns]
+        selected_columns = df_collection_items.columns[~df_collection_items.columns.isin([ "basic_information.thumb", "basic_information.cover_image",\
+                                                                               "basic_information.artists", "basic_information.labels",\
+                                                                               "basic_information.formats", "basic_information.genres",\
+                                                                               "basic_information.styles" ])]
+        df_collection_items = df_collection_items[selected_columns]
 
         db = sqlite3.connect(self.db_file)
-        df_collection.to_sql(name="collection", con=db, if_exists='replace')
+        df_collection_items.to_sql(name="collection_items", con=db, if_exists='replace')
         db.close()
 
     def artists(self, df_collection_artists: pd.DataFrame) -> None:

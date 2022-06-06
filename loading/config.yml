@@ -1,3 +1,3 @@
 discogs_user: mark.zwart76
 discogs_token: WViAHDGnBSilccdlqZPQtqoPdPhnOvVOBByhvEFJ
-db_file: 'discogs_value.db'
+db_file: 'discogs_value_test.db'
