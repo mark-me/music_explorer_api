@@ -29,3 +29,17 @@ pip3 install -r requirements.txt
 ```
 pip3 freeze > requirements.txt 
 ```
+
+# Creating docker image
+
+## Create
+
+```
+docker build -t ghcr.io/mark-me/musicexplorer:v0.0.1 .
+```
+
+## Push image to github
+
+```
+docker push ghcr.io/mark-me/musicexplorer:v0.0.1
+```
