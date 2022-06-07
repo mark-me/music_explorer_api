@@ -73,11 +73,11 @@ class Artists(DBStorage):
         super().__init__(db_file)  
 
     def write_artists(self, df_artists: pd.DataFrame) -> None:
-        selected_columns = df_artists.columns[~df_artists.columns.isin([ 'images', 'members', 'aliases', 'groups', 'realname', 'namevariations', 'message' ])]
+        selected_columns = df_artists.columns[~df_artists.columns.isin([ 'images', 'members', 'aliases', 'groups', 'realname', 'namevariations',\
+            'message', 'urls' ])]
         df_artists = df_artists[selected_columns]
         df_artists = df_artists.rename(columns={'id': 'id_artist', 'name': 'name_artist', 'resource_url': 'api_artist', 'uri': 'url_artist',\
             'releases_url': 'url_releases', 'profile': 'text_profile'})
-        print(df_artists.head(100))
         self.store_append(df_artists, 'artist')
 
     def write_images(self, df_artist_images: pd.DataFrame) -> None:

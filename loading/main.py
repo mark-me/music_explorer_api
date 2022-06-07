@@ -38,6 +38,10 @@ def main():
     df_artist_new = discogs_extractor.artists(df_artists=df_artist_new)
     artist_store.write_artists(df_artists=df_artist_new)
 
+    artist_derive = _derive.Artists(df_artist=df_artist_new)
+    df_artist_image = artist_derive.images()
+    print(df_artist_image.head())
+
     
 if __name__ == "__main__":
     main()

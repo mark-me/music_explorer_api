@@ -43,12 +43,15 @@ class Discogs:
         self.session = requests.Session()
         self.retries = Retry(total=5, backoff_factor=1, status_forcelist=[ 429, 500, 502, 503, 504 ])
 
+    # def __get_response(self, url_request: str, )
+
     def collection_items(self) -> pd.DataFrame:
+        self.session.mount('http://', HTTPAdapter(max_retries=self.retries))
         no_pages = 0
+        query = {'page': 1, 'per_page': 100}
+        url_request = self.url_discogs_api + "/users/" + self.name_discogs_user + "/collection/folders/0/releases"
         # Get first page to get the number of pages
         try:
-            query = {'page': 1, 'per_page': 100}
-            url_request = self.url_discogs_api + "/users/" + self.name_discogs_user + "/collection/folders/0/releases"
             response = requests.get(url_request, params=query)
             response.raise_for_status()
             jsonResponse = response.json()
@@ -62,9 +65,9 @@ class Discogs:
         # Retrieving all collection items
         collection_items = []
         for i in range(1, no_pages + 1):
+            query = {'page': i, 'per_page': 100}
+            url_request = self.url_discogs_api + "/users/" + self.name_discogs_user + "/collection/folders/0/releases"
             try:
-                query = {'page': i, 'per_page': 100}
-                url_request = self.url_discogs_api + "/users/" + self.name_discogs_user + "/collection/folders/0/releases"
                 response = requests.get(url_request, params=query)
                 jsonResponse = response.json()
                 collection_items.append(pd.json_normalize(jsonResponse["releases"]))
