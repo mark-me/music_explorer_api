@@ -21,14 +21,14 @@ def main():
     # Load collection item data
     collection_store = _store.Collection(db_file=db_file)
     df_collection_items = discogs_extractor.collection_items()
-    collection_store.write_items(df_collection_items)
+    collection_store.write_items(df_items=df_collection_items)
     
     collection_derive = _derive.Collection(df_releases=df_collection_items)
-    collection_store.write_artists(collection_derive.artists())
-    collection_store.write_formats(collection_derive.formats())
-    collection_store.write_labels(collection_derive.labels())
-    collection_store.write_genres(collection_derive.genres())
-    collection_store.write_styles(collection_derive.styles())
+    collection_store.write_artists(df_artists=collection_derive.artists())
+    collection_store.write_formats(df_formats=collection_derive.formats())
+    collection_store.write_labels(df_labels=collection_derive.labels())
+    collection_store.write_genres(df_genres=collection_derive.genres())
+    collection_store.write_styles(df_styles=collection_derive.styles())
 
     del df_collection_items
 
@@ -39,9 +39,11 @@ def main():
     artist_store.write_artists(df_artists=df_artist_new)
 
     artist_derive = _derive.Artists(df_artist=df_artist_new)
-    df_artist_image = artist_derive.images()
-    print(df_artist_image.head())
-
+    artist_store.write_images(df_images=artist_derive.images())
+    artist_store.write_urls(df_urls=artist_derive.urls())
+    artist_store.write_aliases(df_aliases=artist_derive.aliases())
+    artist_store.write_groups(df_groups=artist_derive.groups())
+    artist_store.write_members(df_members=artist_derive.members())
     
 if __name__ == "__main__":
     main()
