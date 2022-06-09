@@ -35,15 +35,17 @@ def main():
     # Load artist data
     artist_store = _store.Artists(db_file=db_file)
     df_artist_new = collection_store.read_new_artist_id()
-    df_artist_new = discogs_extractor.artists(df_artists=df_artist_new)
-    artist_store.write_artists(df_artists=df_artist_new)
+    qty_artists_new = df_artist_new.shape[0]
+    if(df_artist_new.shape[0] > 0):
+        df_artist_new = discogs_extractor.artists(df_artists=df_artist_new)
+        artist_store.write_artists(df_artists=df_artist_new)
 
-    artist_derive = _derive.Artists(df_artist=df_artist_new)
-    artist_store.write_images(df_images=artist_derive.images())
-    artist_store.write_urls(df_urls=artist_derive.urls())
-    artist_store.write_aliases(df_aliases=artist_derive.aliases())
-    artist_store.write_groups(df_groups=artist_derive.groups())
-    artist_store.write_members(df_members=artist_derive.members())
+        artist_derive = _derive.Artists(df_artist=df_artist_new)
+        artist_store.write_images(df_images=artist_derive.images())
+        artist_store.write_urls(df_urls=artist_derive.urls())
+        artist_store.write_aliases(df_aliases=artist_derive.aliases())
+        artist_store.write_groups(df_groups=artist_derive.groups())
+        artist_store.write_members(df_members=artist_derive.members())
     
 if __name__ == "__main__":
     main()

@@ -9,6 +9,9 @@ import pandas as pd
 import time
 import datetime as dt
 
+import derive as _derive
+import store as _store
+
 DEFAULT_TIMEOUT = 5 # seconds
 
 
@@ -51,15 +54,8 @@ class Discogs:
         query = {'page': 1, 'per_page': 100}
         url_request = self.url_discogs_api + "/users/" + self.name_discogs_user + "/collection/folders/0/releases"
         # Get first page to get the number of pages
-        try:
-            response = requests.get(url_request, params=query)
-            response.raise_for_status()
-            jsonResponse = response.json()
-            no_pages = jsonResponse["pagination"]["pages"]
-        except HTTPError as http_err:
-            print(f'HTTP error occurred: {http_err}')
-        except Exception as err:
-            print(f'Other error occurred: {err}')
+        response = requests.get(url_request, params=query)
+        no_pages = response.json()["pagination"]["pages"]
         if no_pages == 0:
             return 
         # Retrieving all collection items
@@ -118,3 +114,9 @@ class Discogs:
             lst_artists.append(pd.json_normalize(response.json()))
         df_artist = pd.concat(lst_artists, ignore_index=True)
         return(df_artist)
+
+    def artist_releases(self, df_artists) -> pd.DataFrame:
+        self.session.mount('http://', HTTPAdapter(max_retries=self.retries))
+        lst_releases = []
+        pass
+ 

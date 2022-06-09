@@ -59,7 +59,8 @@ class Collection(DBStorage):
             sql_statement = "SELECT DISTINCT collection_artists.id_artist, collection_artists.api_artist \
                              FROM collection_artists \
                              LEFT JOIN artist  ON  artist.id_artist = collection_artists.id_artist \
-                             WHERE artist.name_artist IS NULL AND collection_artists.api_artist IS NOT NULL;"
+                             WHERE artist.name_artist IS NULL AND \
+                                   collection_artists.api_artist IS NOT NULL AND LENGTH(collection_artists.api_artist) > 0;"
             df_artist = pd.read_sql_query(sql_statement, con=db)
         else:
             df_artist = pd.read_sql(sql="SELECT DISTINCT id_artist, api_artist FROM collection_artists", con=db)
