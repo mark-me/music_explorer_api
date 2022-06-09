@@ -10,7 +10,7 @@ import time
 import datetime as dt
 
 import derive as _derive
-import store as _store
+import db_writer as _store
 
 DEFAULT_TIMEOUT = 5 # seconds
 
