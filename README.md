@@ -15,13 +15,24 @@ Components of this repository:
 
 # Creating a virtual environment
 
-## Create venv
-
+First install the virtual environment package:
 ```
 pip3 install virtualenv
+```
+Create a virtual environment
+```
 virtualenv music_explorer_api
+```
+
+Activate virtual environment
+```
 source music_explorer_api/bin/activate
 pip3 install -r requirements.txt
+```
+
+install package
+```
+pip3 install 
 ```
 
 ## Create requirements.txt
