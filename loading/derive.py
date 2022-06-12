@@ -68,30 +68,39 @@ class Artists(_DeriveBase):
         self.colname_id = 'id_artist'
 
     def images(self) -> pd.DataFrame:
-        df_image = self.column_dicts_to_df(col_source='images')
-        df_image = df_image[['id_artist', 'type', 'uri', 'uri150', 'width', 'height']]
-        df_image = df_image.rename(columns={'uri': 'url_image', 'uri150': 'url_image_150', 'width': 'width_image', 'height': 'height_image'})
+        df_image = pd.DataFrame()
+        if 'images' in self.df:
+            df_image = self.column_dicts_to_df(col_source='images')
+            df_image = df_image[['id_artist', 'type', 'uri', 'uri150', 'width', 'height']]
+            df_image = df_image.rename(columns={'uri': 'url_image', 'uri150': 'url_image_150', 'width': 'width_image', 'height': 'height_image'})
         return df_image
 
     def groups(self) -> pd.DataFrame:
-        # res = self.df_artist[['id', 'groups']].explode('groups').reset_index(drop=True) # For list
-        df_group = self.column_dicts_to_df(col_source='groups')
-        df_group = df_group.rename(columns={'id': 'id_group', 'name': 'name_group', 'resource_url': 'api_group', 'active': 'is_active',\
-            'thumbnail_url': 'url_thumbnail'})
+        df_group = pd.DataFrame()
+        if 'groups' in self.df:
+            df_group = self.column_dicts_to_df(col_source='groups')
+            df_group = df_group.rename(columns={'id': 'id_group', 'name': 'name_group', 'resource_url': 'api_group', 'active': 'is_active',\
+                'thumbnail_url': 'url_thumbnail'})
         return df_group
 
     def aliases(self) -> pd.DataFrame:
-        df_alias = self.column_dicts_to_df(col_source='aliases')
-        df_alias = df_alias.rename(columns={'id': 'id_alias', 'name': 'name_alias', 'resource_url': 'api_alias', 'thumbnail_url': 'url_thumbnail'})
+        df_alias = pd.DataFrame()
+        if 'aliases' in self.df:
+            df_alias = self.column_dicts_to_df(col_source='aliases')
+            df_alias = df_alias.rename(columns={'id': 'id_alias', 'name': 'name_alias', 'resource_url': 'api_alias', 'thumbnail_url': 'url_thumbnail'})
         return df_alias
 
     def members(self) -> pd.DataFrame:
-        df_member = self.column_dicts_to_df(col_source='members')
-        df_member = df_member.rename(columns={'id': 'id_member', 'name': 'name_member', 'resource_url': 'api_member', 'active': 'is_active',\
-            'height': 'height_image', 'thumbnail_url': 'url_thumbnail'})
+        df_member = pd.DataFrame()
+        if 'members' in self.df:
+            df_member = self.column_dicts_to_df(col_source='members')
+            df_member = df_member.rename(columns={'id': 'id_member', 'name': 'name_member', 'resource_url': 'api_member', 'active': 'is_active',\
+                'height': 'height_image', 'thumbnail_url': 'url_thumbnail'})
         return df_member
 
     def urls(self) -> pd.DataFrame:
-        df_url = self.column_dicts_to_df(col_source='urls')
-        df_url = df_url.set_axis(['url_artist', 'id_artist'], axis=1)
+        df_url = pd.DataFrame()
+        if 'urls' in self.df:
+            df_url = self.column_dicts_to_df(col_source='urls')
+            df_url = df_url.set_axis(['url_artist', 'id_artist'], axis=1)
         return df_url     

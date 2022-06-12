@@ -6,12 +6,20 @@ class _DBStorage():
     def __init__(self, db_file) -> None:
         self.db_file = db_file  
 
-    def drop_existing_table(self, name_table: str) -> None:
+    def table_exists(self, name_table: str) -> bool:
         conn = sqlite3.connect(self.db_file)
         cursor = conn.cursor()
-        cursor.execute("DROP TABLE " + name_table)
-        conn.commit()
-        conn.close()
+        cursor.execute("SELECT count(name) FROM sqlite_master WHERE type='table' AND name='" + name_table + "'")
+        does_exist = cursor.fetchone()[0]==1 
+        return does_exist
+
+    def drop_existing_table(self, name_table: str) -> None:
+        if self.table_exists(name_table): 
+            conn = sqlite3.connect(self.db_file)
+            cursor = conn.cursor()
+            cursor.execute("DROP TABLE " + name_table)
+            conn.commit()
+            conn.close()
 
     def store_replace(self, df: pd.DataFrame, name_table: str) -> None:
         db = sqlite3.connect(self.db_file)

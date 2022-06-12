@@ -1,8 +1,9 @@
 import requests
 from requests.auth import AuthBase
 from requests.exceptions import HTTPError
-from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
+from requests.sessions import HTTPAdapter
+from requests.adapters import Retry
+from requests_toolbelt import sessions
 import json
 import numpy as np
 import pandas as pd
@@ -15,7 +16,7 @@ import db_writer as _db_writer
 import db_reader as _db_reader
 
 
-class TimeoutHTTPAdapter(HTTPAdapter):
+""" class TimeoutHTTPAdapter(HTTPAdapter):
     def __init__(self, *args, **kwargs):
         self.timeout = 5
         if "timeout" in kwargs:
@@ -27,41 +28,29 @@ class TimeoutHTTPAdapter(HTTPAdapter):
         timeout = kwargs.get("timeout")
         if timeout is None:
             kwargs["timeout"] = self.timeout
-        return super().send(request, **kwargs)
+        return super().send(request, **kwargs) """
 
 
 class TokenAuth(AuthBase):
-    """Implements a custom authentication scheme."""
-
     def __init__(self, token):
         self.token = token
 
     def __call__(self, r):
-        """Attach an API token to a custom auth header."""
-        #r.headers['Authorization: Discogs token'] = f'{self.token}'  # Python 3.6+
         r.headers['Discogs token'] = f'{self.token}'  # Python 3.6+
         return r        
-""" 
-http = requests.Session()
-
-assert_status_hook = lambda response, *args, **kwargs: response.raise_for_status()
-http.hooks["response"] = [assert_status_hook]
-
-retries = Retry(total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])
-http.mount("https://", TimeoutHTTPAdapter(max_retries=retries)) """
 
 
 class Discogs:
     def __init__(self, name_discogs_user: str, discogs_token: str, db_file: str) -> None:
         self.name_discogs_user = name_discogs_user
         self.discogs_token = discogs_token
-        self.url_discogs_api = 'https://api.discogs.com'
-        self.session = requests.Session()
-        self.retries = Retry(total=5, backoff_factor=1, status_forcelist=[ 429, 500, 502, 503, 504 ])
         self.db_file = db_file
+        self.retries = Retry(total=5, backoff_factor=1, status_forcelist=[ 429, 500, 502, 503, 504 ])
+        self.session = sessions.BaseUrlSession(base_url='https://api.discogs.com')
+        self.session.mount(prefix='https://api.discogs.com', adapter=HTTPAdapter(max_retries=self.retries))
 
     def __get_qty_pages(self, url_request: str, ) -> int:
-        response = requests.get(
+        response = self.session.get(
             url_request, 
             params={'page': 1, 'per_page': 100}, 
             auth=TokenAuth(self.discogs_token)
@@ -72,13 +61,13 @@ class Discogs:
         db_writer = _db_writer.Collection(db_file=self.db_file)
         db_writer.drop_tables()
         no_pages = self.__get_qty_pages(
-            url_request=self.url_discogs_api + "/users/" + self.name_discogs_user + "/collection/folders/0/releases"
+            url_request="/users/" + self.name_discogs_user + "/collection/folders/0/releases"
             )
         if no_pages != 0:
             for i in range(1, no_pages + 1):
-                url_request = self.url_discogs_api + "/users/" + self.name_discogs_user + "/collection/folders/0/releases" # Extract 
+                url_request = "/users/" + self.name_discogs_user + "/collection/folders/0/releases" # Extract 
                 try:
-                    response = requests.get(
+                    response = self.session.get(
                         url_request,
                         params={'page': i, 'per_page': 100}, 
                         auth=TokenAuth(self.discogs_token)
@@ -102,9 +91,9 @@ class Discogs:
         query = {'curr_abbr': 'EUR'}
         lst_lowest_value = []
         for i in df_release.index:
-            url_request = self.url_discogs_api + "/marketplace/stats/" + str(df_release['id'][i])
+            url_request = "/marketplace/stats/" + str(df_release['id'][i])
             try:
-                response = requests.get(url_request, params=query, auth=TokenAuth(self.discogs_token))
+                response = self.session.get(url_request, params=query, auth=TokenAuth(self.discogs_token))
                 response.raise_for_status()
                 df_item = pd.json_normalize(response.json())
                 df_item['id'] = str(df_release['id'][i])
@@ -122,10 +111,28 @@ class Discogs:
     def release_stats(self, df_release) -> None:
         pass
         
-    def artists(self) -> None:
+    def artists_collection(self) -> None:
         db_reader = _db_reader.Collection(db_file=self.db_file)
-        db_writer = _db_writer.Artists(db_file=self.db_file)
         df_artists = db_reader.new_artists()
+        self.artists(df_artists=df_artists)
+
+    def artists_aliases(self) -> None:
+        db_reader = _db_reader.Artists(db_file=self.db_file)
+        df_artists = db_reader.new_aliases()
+        self.artists(df_artists=df_artists)
+
+    def artists_members(self) -> None:
+        db_reader = _db_reader.Artists(db_file=self.db_file)
+        df_artists = db_reader.new_members()
+        self.artists(df_artists=df_artists)
+
+    def artists_groups(self) -> None:
+        db_reader = _db_reader.Artists(db_file=self.db_file)
+        df_artists = db_reader.new_groups()
+        self.artists(df_artists=df_artists)
+
+    def artists(self, df_artists: pd.DataFrame) -> None:
+        db_writer = _db_writer.Artists(db_file=self.db_file)
         for index, row in df_artists.iterrows():
             try:
                 response = self.session.get(row['api_artist'], auth=TokenAuth(self.discogs_token))  # Extract 
@@ -144,7 +151,9 @@ class Discogs:
                     time.sleep(60)    
             except Exception as err:
                 print(f'Other error occurred: {err}')
-  
+
     def artist_releases(self, df_artists) -> None:
-        pass
+        collection_reader = _db_reader.Collection(db_file=self.db_file)
+        #df_artists = collection_reader.new_artists()
+        self.artists(df_artists=df_artists)
  
