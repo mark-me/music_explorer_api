@@ -45,7 +45,7 @@ class Discogs:
         self.name_discogs_user = name_discogs_user
         self.discogs_token = discogs_token
         self.db_file = db_file
-        self.retries = Retry(total=5, backoff_factor=1, status_forcelist=[ 429, 500, 502, 503, 504 ])
+        self.retries = Retry(total=3, backoff_factor=1, status_forcelist=[ 429, 500, 502, 503, 504 ])
         self.session = sessions.BaseUrlSession(base_url='https://api.discogs.com')
         self.session.mount(prefix='https://api.discogs.com', adapter=HTTPAdapter(max_retries=self.retries))
 
@@ -81,6 +81,7 @@ class Discogs:
                         db_writer.labels(df_labels=derive.labels())
                         db_writer.genres(df_genres=derive.genres())
                         db_writer.styles(df_styles=derive.styles())
+                        time.sleep(2)
                 except HTTPError as http_err:
                     print(f'HTTP error occurred: {http_err}')
                 except Exception as err:
@@ -146,9 +147,10 @@ class Discogs:
                     db_writer.aliases(df_aliases=derive.aliases())
                     db_writer.groups(df_groups=derive.groups())
                     db_writer.members(df_members=derive.members()) 
+                    time.sleep(2)
             except HTTPError as http_err:
                 if response.status_code == 429:
-                    time.sleep(60)    
+                    time.sleep(61)    
             except Exception as err:
                 print(f'Other error occurred: {err}')
 
