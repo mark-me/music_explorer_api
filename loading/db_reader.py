@@ -37,7 +37,7 @@ class Artists(_DBStorage):
     
     def new_aliases(self) -> pd.DataFrame:
         db = sqlite3.connect(self.db_file)
-        sql_statement = "SELECT id_alias AS id_artist, api_alias as api_artist \
+        sql_statement = "SELECT DISTINCT id_alias AS id_artist, api_alias as api_artist \
                          FROM artist_aliases \
                          WHERE id_alias NOT IN (SELECT id_artist FROM artist) AND\
                                api_alias IS NOT NULL AND LENGTH(api_alias) > 0;"
@@ -45,7 +45,7 @@ class Artists(_DBStorage):
 
     def new_groups(self) -> pd.DataFrame:
         db = sqlite3.connect(self.db_file)
-        sql_statement = "SELECT id_group AS id_artist, api_group as api_artist \
+        sql_statement = "SELECT DISTINCT id_group AS id_artist, api_group as api_artist \
                          FROM artist_groups \
                          WHERE id_group NOT IN (SELECT id_artist FROM artist) AND\
                                api_group IS NOT NULL AND LENGTH(api_group) > 0;"
@@ -53,7 +53,7 @@ class Artists(_DBStorage):
 
     def new_members(self) -> pd.DataFrame:
         db = sqlite3.connect(self.db_file)
-        sql_statement = "SELECT id_member AS id_artist, api_member as api_artist \
+        sql_statement = "SELECT DISTINCT id_member AS id_artist, api_member as api_artist \
                          FROM artist_members \
                          WHERE id_member NOT IN (SELECT id_artist FROM artist) AND\
                                api_member IS NOT NULL AND LENGTH(api_member) > 0;"
