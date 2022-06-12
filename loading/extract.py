@@ -1,7 +1,9 @@
 import requests
+from requests.auth import AuthBase
 from requests.exceptions import HTTPError
-from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
+from requests.sessions import HTTPAdapter
+from requests.adapters import Retry
+from requests_toolbelt import sessions
 import json
 import numpy as np
 import pandas as pd
@@ -10,14 +12,13 @@ import time
 import datetime as dt
 
 import derive as _derive
-import db_writer as _store
+import db_writer as _db_writer
+import db_reader as _db_reader
 
-DEFAULT_TIMEOUT = 5 # seconds
 
-
-class TimeoutHTTPAdapter(HTTPAdapter):
+""" class TimeoutHTTPAdapter(HTTPAdapter):
     def __init__(self, *args, **kwargs):
-        self.timeout = DEFAULT_TIMEOUT
+        self.timeout = 5
         if "timeout" in kwargs:
             self.timeout = kwargs["timeout"]
             del kwargs["timeout"]
@@ -27,96 +28,132 @@ class TimeoutHTTPAdapter(HTTPAdapter):
         timeout = kwargs.get("timeout")
         if timeout is None:
             kwargs["timeout"] = self.timeout
-        return super().send(request, **kwargs)
+        return super().send(request, **kwargs) """
 
-http = requests.Session()
 
-assert_status_hook = lambda response, *args, **kwargs: response.raise_for_status()
-http.hooks["response"] = [assert_status_hook]
+class TokenAuth(AuthBase):
+    def __init__(self, token):
+        self.token = token
 
-retries = Retry(total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])
-http.mount("https://", TimeoutHTTPAdapter(max_retries=retries))
+    def __call__(self, r):
+        r.headers['Discogs token'] = f'{self.token}'  # Python 3.6+
+        return r        
 
 
 class Discogs:
-    def __init__(self, name_discogs_user: str, discogs_token: str, url_discogs_api: str) -> None:
+    def __init__(self, name_discogs_user: str, discogs_token: str, db_file: str) -> None:
         self.name_discogs_user = name_discogs_user
         self.discogs_token = discogs_token
-        self.url_discogs_api = url_discogs_api
-        self.session = requests.Session()
+        self.db_file = db_file
         self.retries = Retry(total=5, backoff_factor=1, status_forcelist=[ 429, 500, 502, 503, 504 ])
+        self.session = sessions.BaseUrlSession(base_url='https://api.discogs.com')
+        self.session.mount(prefix='https://api.discogs.com', adapter=HTTPAdapter(max_retries=self.retries))
 
-    # def __get_response(self, url_request: str, )
+    def __get_qty_pages(self, url_request: str, ) -> int:
+        response = self.session.get(
+            url_request, 
+            params={'page': 1, 'per_page': 100}, 
+            auth=TokenAuth(self.discogs_token)
+            )
+        return response.json()["pagination"]["pages"]
 
-    def collection_items(self) -> pd.DataFrame:
-        self.session.mount('http://', HTTPAdapter(max_retries=self.retries))
-        no_pages = 0
-        query = {'page': 1, 'per_page': 100}
-        url_request = self.url_discogs_api + "/users/" + self.name_discogs_user + "/collection/folders/0/releases"
-        # Get first page to get the number of pages
-        response = requests.get(url_request, params=query)
-        no_pages = response.json()["pagination"]["pages"]
-        if no_pages == 0:
-            return 
-        # Retrieving all collection items
-        collection_items = []
-        for i in range(1, no_pages + 1):
-            query = {'page': i, 'per_page': 100}
-            url_request = self.url_discogs_api + "/users/" + self.name_discogs_user + "/collection/folders/0/releases"
-            try:
-                response = requests.get(url_request, params=query)
-                jsonResponse = response.json()
-                collection_items.append(pd.json_normalize(jsonResponse["releases"]))
-            except HTTPError as http_err:
-                print(f'HTTP error occurred: {http_err}')
-            except Exception as err:
-                print(f'Other error occurred: {err}')
-        df_collection = pd.concat(collection_items, ignore_index=True)
-        return(df_collection)
+    def collection_items(self) -> None:
+        db_writer = _db_writer.Collection(db_file=self.db_file)
+        db_writer.drop_tables()
+        no_pages = self.__get_qty_pages(
+            url_request="/users/" + self.name_discogs_user + "/collection/folders/0/releases"
+            )
+        if no_pages != 0:
+            for i in range(1, no_pages + 1):
+                url_request = "/users/" + self.name_discogs_user + "/collection/folders/0/releases" # Extract 
+                try:
+                    response = self.session.get(
+                        url_request,
+                        params={'page': i, 'per_page': 100}, 
+                        auth=TokenAuth(self.discogs_token)
+                        )
+                    df_items = pd.json_normalize(response.json()["releases"])
+                    if df_items.shape[0] > 0:
+                        derive = _derive.Collection(df_releases=df_items)   # Derive and store
+                        db_writer.items(df_items=df_items)
+                        db_writer.artists(df_artists=derive.artists())
+                        db_writer.formats(df_formats=derive.formats())
+                        db_writer.labels(df_labels=derive.labels())
+                        db_writer.genres(df_genres=derive.genres())
+                        db_writer.styles(df_styles=derive.styles())
+                except HTTPError as http_err:
+                    print(f'HTTP error occurred: {http_err}')
+                except Exception as err:
+                    print(f'Other error occurred: {err}')
 
-    def release_lowest_value(self, df_release) -> pd.DataFrame:
+
+    def release_lowest_value(self, df_release) -> None:
         query = {'curr_abbr': 'EUR'}
         lst_lowest_value = []
         for i in df_release.index:
-            url_request = self.url_discogs_api + "/marketplace/stats/" + str(df_release['id'][i])
+            url_request = "/marketplace/stats/" + str(df_release['id'][i])
             try:
-                response = requests.get(url_request, params=query)
+                response = self.session.get(url_request, params=query, auth=TokenAuth(self.discogs_token))
                 response.raise_for_status()
                 df_item = pd.json_normalize(response.json())
                 df_item['id'] = str(df_release['id'][i])
                 df_item['df_release'] = dt.datetime.now()
                 df_item = df_item.loc[:, df_item.columns != 'lowest_price']
+                # Derive stuff
+                # Store stuff
                 lst_lowest_value.append(df_item)
             except HTTPError as http_err:
                 if response.status_code == 429:
                     time.sleep(60)
             except Exception as err:
                 print(f'Other error occurred: {err}')
-        df_collection_value = pd.concat(lst_lowest_value, ignore_index=True)
-        return(df_collection_value)
 
-    def release_stats(self, df_release) -> pd.DataFrame:
+    def release_stats(self, df_release) -> None:
         pass
         
-    def artists(self, df_artists) -> pd.DataFrame:
-        self.session.mount('http://', HTTPAdapter(max_retries=self.retries))
-        lst_artists = []
+    def artists_collection(self) -> None:
+        db_reader = _db_reader.Collection(db_file=self.db_file)
+        df_artists = db_reader.new_artists()
+        self.artists(df_artists=df_artists)
+
+    def artists_aliases(self) -> None:
+        db_reader = _db_reader.Artists(db_file=self.db_file)
+        df_artists = db_reader.new_aliases()
+        self.artists(df_artists=df_artists)
+
+    def artists_members(self) -> None:
+        db_reader = _db_reader.Artists(db_file=self.db_file)
+        df_artists = db_reader.new_members()
+        self.artists(df_artists=df_artists)
+
+    def artists_groups(self) -> None:
+        db_reader = _db_reader.Artists(db_file=self.db_file)
+        df_artists = db_reader.new_groups()
+        self.artists(df_artists=df_artists)
+
+    def artists(self, df_artists: pd.DataFrame) -> None:
+        db_writer = _db_writer.Artists(db_file=self.db_file)
         for index, row in df_artists.iterrows():
-            url_request = row['api_artist'] + "?token=" + self.discogs_token
             try:
-                response = self.session.get(url_request)
+                response = self.session.get(row['api_artist'], auth=TokenAuth(self.discogs_token))  # Extract 
                 response.raise_for_status()
+                df_artist = pd.json_normalize(response.json())
+                if df_artist.shape[0] > 0:
+                    derive = _derive.Artists(df_artist=df_artist)   # Derive and store
+                    db_writer.artists(df_artists=df_artist)
+                    db_writer.images(df_images=derive.images())
+                    db_writer.urls(df_urls=derive.urls())
+                    db_writer.aliases(df_aliases=derive.aliases())
+                    db_writer.groups(df_groups=derive.groups())
+                    db_writer.members(df_members=derive.members()) 
             except HTTPError as http_err:
                 if response.status_code == 429:
                     time.sleep(60)    
             except Exception as err:
                 print(f'Other error occurred: {err}')
-            lst_artists.append(pd.json_normalize(response.json()))
-        df_artist = pd.concat(lst_artists, ignore_index=True)
-        return(df_artist)
 
-    def artist_releases(self, df_artists) -> pd.DataFrame:
-        self.session.mount('http://', HTTPAdapter(max_retries=self.retries))
-        lst_releases = []
-        pass
+    def artist_releases(self, df_artists) -> None:
+        collection_reader = _db_reader.Collection(db_file=self.db_file)
+        #df_artists = collection_reader.new_artists()
+        self.artists(df_artists=df_artists)
  
