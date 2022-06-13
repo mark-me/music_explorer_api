@@ -10,6 +10,7 @@ import pandas as pd
 
 import time
 import datetime as dt
+from tqdm import tqdm
 
 import derive as _derive
 import db_writer as _db_writer
@@ -64,7 +65,8 @@ class Discogs:
             url_request="/users/" + self.name_discogs_user + "/collection/folders/0/releases"
             )
         if no_pages != 0:
-            for i in range(1, no_pages + 1):
+            print("Retrieve collection items")
+            for i in tqdm(range(1, no_pages + 1)):
                 url_request = "/users/" + self.name_discogs_user + "/collection/folders/0/releases" # Extract 
                 try:
                     response = self.session.get(
@@ -91,7 +93,8 @@ class Discogs:
     def release_lowest_value(self, df_release) -> None:
         query = {'curr_abbr': 'EUR'}
         lst_lowest_value = []
-        for i in df_release.index:
+        print("Retrieve lowest collection item value")
+        for i in tqdm(df_release.index):
             url_request = "/marketplace/stats/" + str(df_release['id'][i])
             try:
                 response = self.session.get(url_request, params=query, auth=TokenAuth(self.discogs_token))
@@ -120,21 +123,24 @@ class Discogs:
     def artists_aliases(self) -> None:
         db_reader = _db_reader.Artists(db_file=self.db_file)
         df_artists = db_reader.new_aliases()
+        print("Retrieve artist aliases")
         self.artists(df_artists=df_artists)
 
     def artists_members(self) -> None:
         db_reader = _db_reader.Artists(db_file=self.db_file)
         df_artists = db_reader.new_members()
+        print("Retrieve group members")
         self.artists(df_artists=df_artists)
 
     def artists_groups(self) -> None:
         db_reader = _db_reader.Artists(db_file=self.db_file)
         df_artists = db_reader.new_groups()
+        print("Retrieve artist groups")
         self.artists(df_artists=df_artists)
 
     def artists(self, df_artists: pd.DataFrame) -> None:
         db_writer = _db_writer.Artists(db_file=self.db_file)
-        for index, row in df_artists.iterrows():
+        for index, row in tqdm(df_artists.iterrows(), total=df_artists.shape[0]):
             try:
                 response = self.session.get(row['api_artist'], auth=TokenAuth(self.discogs_token))  # Extract 
                 response.raise_for_status()
