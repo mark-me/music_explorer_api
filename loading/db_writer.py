@@ -83,7 +83,24 @@ class Collection(_DBStorage):
 class Artists(_DBStorage):
 
     def __init__(self, db_file) -> None:
-        super().__init__(db_file)  
+        super().__init__(db_file)
+
+    def create_tables(self) -> None:
+        conn = sqlite3.connect(self.db_file)
+        cursor = conn.cursor()
+        sql = "CREATE TABLE artist(name_artist TEXT, id_artist INT, api_artist TEXT,\
+                                   url_artist TEXT, url_releases TEXT, text_profile TEXT, data_quality TEXT, not_found INT);"
+        cursor.execute(sql)
+        sql = "CREATE TABLE artist_aliases (id_alias INTEGER, name_alias TEXT, api_alias TEXT, id_artist INTEGER);"
+        cursor.execute(sql)
+        sql = "CREATE TABLE artist_members (id_member INTEGER, name_member TEXT, api_member TEXT, is_active INTEGER, id_artist INTEGER)"
+        cursor.execute(sql)
+        sql = "CREATE TABLE artist_groups (id_group INTEGER, name_group TEXT, api_group TEXT, is_active INTEGER, id_artist INTEGER)"
+        cursor.execute(sql)
+        sql = "CREATE TABLE artist_images (id_artist INTEGER, type TEXT, url_image TEXT, url_image_150 TEXT, width_image INTEGER, height_image INTEGER)"
+        cursor.execute(sql)
+        sql = "CREATE TABLE artist_urls (url_artist TEXT, id_artist INTEGER)"
+        cursor.execute(sql)
 
     def artists(self, df_artists: pd.DataFrame) -> None:
         if df_artists.shape[0] == 0: return
@@ -93,6 +110,10 @@ class Artists(_DBStorage):
         df_artists = df_artists.rename(columns={'id': 'id_artist', 'name': 'name_artist', 'resource_url': 'api_artist', 'uri': 'url_artist',\
             'releases_url': 'url_releases', 'profile': 'text_profile'})
         self.store_append(df=df_artists, name_table='artist')
+
+    def artist_not_found(self, df_artist: pd.DataFrame) -> None:
+        
+        pass
 
     def images(self, df_images: pd.DataFrame) -> None:
         if df_images.shape[0] == 0: return

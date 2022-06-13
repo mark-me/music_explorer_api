@@ -45,7 +45,7 @@ class Discogs:
         self.name_discogs_user = name_discogs_user
         self.discogs_token = discogs_token
         self.db_file = db_file
-        self.retries = Retry(total=3, backoff_factor=1, status_forcelist=[ 429, 500, 502, 503, 504 ])
+        self.retries = Retry(total=3, backoff_factor=10, status_forcelist=[ 429, 500, 502, 503, 504 ])
         self.session = sessions.BaseUrlSession(base_url='https://api.discogs.com')
         self.session.mount(prefix='https://api.discogs.com', adapter=HTTPAdapter(max_retries=self.retries))
 
@@ -150,7 +150,11 @@ class Discogs:
                     time.sleep(2)
             except HTTPError as http_err:
                 if response.status_code == 429:
-                    time.sleep(61)    
+                    time.sleep(61)  
+                if response.status_code == 404:
+                    df_artist = row.to_frame().T
+                    df_artist['not_found'] = 1
+                    db_writer.artists(df_artists=df_artist) 
             except Exception as err:
                 print(f'Other error occurred: {err}')
 
