@@ -18,7 +18,9 @@ import derive as _derive
 import db_writer as _db_writer
 import db_reader as _db_reader
 
-TOO_MANY_REQUESTS_SLEEP = 20
+SLEEP_TOO_MANY_REQUESTS = 10
+SLEEP_BETWEEN_CALLS = 1
+
 
 class TokenAuth(AuthBase):
     def __init__(self, token):
@@ -72,10 +74,10 @@ class Discogs:
                         db_writer.genres(df_genres=derive.genres())
                         db_writer.styles(df_styles=derive.styles())
                         self.release(df_release=df_items)
-                        time.sleep(2)
+                        time.sleep(SLEEP_BETWEEN_CALLS)
                 except HTTPError as http_err:
                     if response.status_code == 429:
-                        time.sleep(TOO_MANY_REQUESTS_SLEEP)
+                        time.sleep(SLEEP_TOO_MANY_REQUESTS)
                 except Exception as err:
                     print(f'Other error occurred: {err}')
 
@@ -96,10 +98,10 @@ class Discogs:
                     db_writer.release_stats(df_release=df_item)
                     db_writer.release_videos(derive.videos())
                     db_writer.release_tracks(derive.tracks())
-                time.sleep(2)
+                time.sleep(SLEEP_BETWEEN_CALLS)
             except HTTPError as http_err:
                 if response.status_code == 429:
-                    time.sleep(TOO_MANY_REQUESTS_SLEEP)
+                    time.sleep(SLEEP_TOO_MANY_REQUESTS)
             except Exception as err:
                 print(f'Other error occurred: {err}')
         
@@ -141,10 +143,10 @@ class Discogs:
                     db_writer.aliases(df_aliases=derive.aliases())
                     db_writer.groups(df_groups=derive.groups())
                     db_writer.members(df_members=derive.members()) 
-                    time.sleep(2)
+                    time.sleep(SLEEP_BETWEEN_CALLS)
             except HTTPError as http_err:
                 if response.status_code == 429:
-                    time.sleep(TOO_MANY_REQUESTS_SLEEP)  
+                    time.sleep(SLEEP_TOO_MANY_REQUESTS)  
                 if response.status_code == 404:
                     df_artist = row.to_frame().T
                     df_artist['not_found'] = 1
