@@ -80,7 +80,7 @@ class Discogs:
                     print(f'Other error occurred: {err}')
 
     def release(self, df_release) -> None:
-        print("Release community stats")
+        print("Release data")
         db_writer = _db_writer.Collection(db_file=self.db_file)
         query = {'curr_abbr': 'EUR'}
         for index, row in tqdm(df_release.iterrows(), total=df_release.shape[0]):
