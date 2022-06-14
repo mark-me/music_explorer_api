@@ -62,7 +62,6 @@ class Collection(_DeriveBase):
 
 
 class Artists(_DeriveBase):
-
     def __init__(self, df_artist: pd.DataFrame) -> None:
         super().__init__(df=df_artist)
         self.colname_id = 'id_artist'
@@ -103,4 +102,25 @@ class Artists(_DeriveBase):
         if 'urls' in self.df:
             df_url = self.column_dicts_to_df(col_source='urls')
             df_url = df_url.set_axis(['url_artist', 'id_artist'], axis=1)
-        return df_url     
+        return df_url
+    
+    
+class Release(_DeriveBase):
+    def __init__(self, df_release: pd.DataFrame) -> None:
+        super().__init__(df=df_release)
+        self.colname_id = 'id_release'
+        
+    def videos(self) -> pd.DataFrame:
+        df_videos = pd.DataFrame()
+        if 'videos' in self.df:
+            df_videos = self.column_dicts_to_df(col_source='videos')
+            df_videos = df_videos[['id_release', 'title', 'uri']]
+        return df_videos
+    
+    def tracks(self) -> pd.DataFrame:
+        df_tracks = pd.DataFrame()
+        if 'tracklist' in self.df:
+            df_tracks = self.column_dicts_to_df(col_source='tracklist')
+            df_tracks = df_tracks[['id_release', 'position', 'title', 'duration']]
+        return df_tracks
+            

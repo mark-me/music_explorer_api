@@ -1,4 +1,5 @@
 import sqlite3
+from unicodedata import name
 import numpy as np
 import pandas as pd
 
@@ -50,6 +51,8 @@ class Collection(_DBStorage):
         self.drop_existing_table(name_table='collection_labels')
         self.drop_existing_table(name_table='collection_genres')
         self.drop_existing_table(name_table='collection_styles')
+        self.drop_existing_table(name_table='collection_videos')
+        self.drop_existing_table(name_table='collection_tracks')
         
     def items(self, df_items: pd.DataFrame) -> None:
         if df_items.shape[0] == 0: return
@@ -58,7 +61,7 @@ class Collection(_DBStorage):
         df_items = df_items[selected_columns]
         df_items = df_items.rename(columns={'id': 'id_release', 'instance_id': 'id_instance',\
             'basic_information.id': 'id_basic_info', 'basic_information.master_id': 'id_master', 'basic_information.master_url': 'url_master',\
-            'basic_information.resource_url' : 'api_master'})
+            'basic_information.resource_url' : 'url_release'})
         self.store_append(df=df_items, name_table='collection_items')
 
     def artists(self, df_artists: pd.DataFrame) -> None:
@@ -82,13 +85,30 @@ class Collection(_DBStorage):
         if df_styles.shape[0] == 0: return
         self.store_append(df=df_styles, name_table='collection_styles')    
 
-    def lowest_value(self, df_lowest_value: pd.DataFrame) -> None:
-        if df_lowest_value.shape[0] == 0: return
-        self.store_append(df=df_lowest_value, name_table='collection_item_value')
+    def release_videos(self, df_videos: pd.DataFrame) -> None:
+        if df_videos.shape[0] == 0: return
+        selected_columns = df_videos.columns[df_videos.columns.isin(['id_release', 'title', 'uri'])]
+        df_videos = df_videos[selected_columns]
+        df_videos = df_videos.rename(columns={'uri': 'url_video'})
+        self.store_append(df=df_videos, name_table='collection_videos') 
+        
+    def release_tracks(self, df_tracks: pd.DataFrame) -> None:
+        if df_tracks.shape[0] == 0: return
+        self.store_append(df=df_tracks, name_table='collection_tracks') 
+        
+    def release_stats(self, df_release: pd.DataFrame) -> None:
+        if df_release.shape[0] == 0: return
+        selected_columns = df_release.columns[df_release.columns.isin(['id',\
+            'community.have', 'community.want', 'community.rating.count', 'community.rating.average',\
+            'date_added', 'date_changed', 'num_for_sale', 'lowest_price', 'released', 'time_retrieved'])]
+        df_release = df_release[selected_columns]
+        df_release = df_release.rename(columns={'id': 'id_release',\
+            'community.have': 'qty_have', 'community.want': 'qty_want', 'community.rating.count': 'qty_ratings', 'community.rating.average': 'avg_rating',\
+            'num_for_sale': 'qty_for_sale', 'lowest_price': 'amt_price_lowest', 'released': 'date_released'})
+        self.store_append(df=df_release, name_table='collection_stats') 
 
-
+        
 class Artists(_DBStorage):
-
     def __init__(self, db_file) -> None:
         super().__init__(db_file)
 

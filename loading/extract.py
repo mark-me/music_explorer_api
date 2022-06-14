@@ -10,6 +10,7 @@ import pandas as pd
 
 import time
 import datetime as dt
+import tornado
 from tqdm import tqdm
 
 import derive as _derive
@@ -83,37 +84,37 @@ class Discogs:
                         db_writer.labels(df_labels=derive.labels())
                         db_writer.genres(df_genres=derive.genres())
                         db_writer.styles(df_styles=derive.styles())
+                        self.release(df_release=df_items)
                         time.sleep(2)
                 except HTTPError as http_err:
-                    print(f'HTTP error occurred: {http_err}')
+                    if response.status_code == 429:
+                        time.sleep(20)
                 except Exception as err:
                     print(f'Other error occurred: {err}')
 
-
-    def release_lowest_value(self, df_release) -> None:
+    def release(self, df_release) -> None:
+        print("Release community stats")
+        db_writer = _db_writer.Collection(db_file=self.db_file)
         query = {'curr_abbr': 'EUR'}
-        lst_lowest_value = []
-        print("Retrieve lowest collection item value")
-        for i in tqdm(df_release.index):
-            url_request = "/marketplace/stats/" + str(df_release['id'][i])
+        for index, row in tqdm(df_release.iterrows(), total=df_release.shape[0]):
+            url_request = "/releases/" + str(row['id'])
             try:
                 response = self.session.get(url_request, params=query, auth=TokenAuth(self.discogs_token))
                 response.raise_for_status()
                 df_item = pd.json_normalize(response.json())
-                df_item['id'] = str(df_release['id'][i])
-                df_item['df_release'] = dt.datetime.now()
-                df_item = df_item.loc[:, df_item.columns != 'lowest_price']
-                # Derive stuff
-                # Store stuff
-                lst_lowest_value.append(df_item)
+                df_item['id_release'] = row['id']
+                df_item['time_retrieved'] = dt.datetime.now()
+                if df_item.shape[0] > 0:
+                    derive = _derive.Release(df_release=df_item)
+                    db_writer.release_stats(df_release=df_item)
+                    db_writer.release_videos(derive.videos())
+                    db_writer.release_tracks(derive.tracks())
+                time.sleep(2)
             except HTTPError as http_err:
                 if response.status_code == 429:
-                    time.sleep(60)
+                    time.sleep(20)
             except Exception as err:
                 print(f'Other error occurred: {err}')
-
-    def release_stats(self, df_release) -> None:
-        pass
         
     def artists_collection(self) -> None:
         db_reader = _db_reader.Collection(db_file=self.db_file)
@@ -156,7 +157,7 @@ class Discogs:
                     time.sleep(2)
             except HTTPError as http_err:
                 if response.status_code == 429:
-                    time.sleep(61)  
+                    time.sleep(20)  
                 if response.status_code == 404:
                     df_artist = row.to_frame().T
                     df_artist['not_found'] = 1
