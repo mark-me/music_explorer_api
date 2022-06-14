@@ -1,3 +1,4 @@
+from http.client import TOO_MANY_REQUESTS
 import requests
 from requests.auth import AuthBase
 from requests.exceptions import HTTPError
@@ -17,6 +18,7 @@ import derive as _derive
 import db_writer as _db_writer
 import db_reader as _db_reader
 
+TOO_MANY_REQUESTS_SLEEP = 20
 
 class TokenAuth(AuthBase):
     def __init__(self, token):
@@ -73,7 +75,7 @@ class Discogs:
                         time.sleep(2)
                 except HTTPError as http_err:
                     if response.status_code == 429:
-                        time.sleep(20)
+                        time.sleep(TOO_MANY_REQUESTS_SLEEP)
                 except Exception as err:
                     print(f'Other error occurred: {err}')
 
@@ -97,7 +99,7 @@ class Discogs:
                 time.sleep(2)
             except HTTPError as http_err:
                 if response.status_code == 429:
-                    time.sleep(20)
+                    time.sleep(TOO_MANY_REQUESTS_SLEEP)
             except Exception as err:
                 print(f'Other error occurred: {err}')
         
@@ -142,7 +144,7 @@ class Discogs:
                     time.sleep(2)
             except HTTPError as http_err:
                 if response.status_code == 429:
-                    time.sleep(20)  
+                    time.sleep(TOO_MANY_REQUESTS_SLEEP)  
                 if response.status_code == 404:
                     df_artist = row.to_frame().T
                     df_artist['not_found'] = 1
