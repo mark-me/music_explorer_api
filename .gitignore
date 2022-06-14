@@ -131,3 +131,4 @@ app/test.sqlite
 loading/testing.ipynb
 loading/test.py
 discogs_value_test.db
+loading/config.yml
