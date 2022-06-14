@@ -18,21 +18,6 @@ import db_writer as _db_writer
 import db_reader as _db_reader
 
 
-""" class TimeoutHTTPAdapter(HTTPAdapter):
-    def __init__(self, *args, **kwargs):
-        self.timeout = 5
-        if "timeout" in kwargs:
-            self.timeout = kwargs["timeout"]
-            del kwargs["timeout"]
-        super().__init__(*args, **kwargs)
-
-    def send(self, request, **kwargs):
-        timeout = kwargs.get("timeout")
-        if timeout is None:
-            kwargs["timeout"] = self.timeout
-        return super().send(request, **kwargs) """
-
-
 class TokenAuth(AuthBase):
     def __init__(self, token):
         self.token = token
