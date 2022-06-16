@@ -54,6 +54,36 @@ class Collection(_DBStorage):
         self.drop_existing_table(name_table='collection_videos')
         self.drop_existing_table(name_table='collection_tracks')
         
+    def create_views(self) -> None:
+        conn = sqlite3.connect(self.db_file)
+        cursor = conn.cursor()
+        if not self.view_exists(name_view='vw_artists_qty_in_collection'):
+            sql = "CREATE VIEW vw_artists_qty_in_collection AS\
+                SELECT artists.id_artist AS id_artist,\
+                    artists.name_artist AS name_artist,\
+                    artists.url_image AS url_artist_image,\
+                    COUNT(*) AS qty_collection_items\
+                FROM artists\
+                INNER JOIN collection_artists\
+                    ON collection_artists.id_artist = artists.id_artist\
+                INNER JOIN collection_items\
+                    ON collection_items.id_release = collection_artists.id_release\
+                GROUP BY artists.id_artist, artists.name_artist\
+                ORDER BY qty_collection_items DESC"
+            cursor.execute(sql)        
+        if not self.view_exists(name_view='vw_artist_collection_releases'):
+            sql = "CREATE VIEW vw_artist_collection_releases AS\
+                SELECT artists.id_artist AS id_artist,\
+                    artists.name_artist AS name_artist,\
+                    collection_items.title as name_release,\
+                    collection_items.url_cover as url_cover\
+                FROM artists\
+                INNER JOIN collection_artists\
+                    ON collection_artists.id_artist = artists.id_artist\
+                INNER JOIN collection_items\
+                    ON collection_items.id_release = collection_artists.id_release"
+            cursor.execute(sql)
+        
     def items(self, df_items: pd.DataFrame) -> None:
         if df_items.shape[0] == 0: return
         selected_columns = df_items.columns[~df_items.columns.isin([ 'basic_information.thumb', 'basic_information.cover_image',\

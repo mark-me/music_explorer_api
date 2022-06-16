@@ -78,6 +78,7 @@ class Discogs:
                         time.sleep(SLEEP_TOO_MANY_REQUESTS)
                 except Exception as err:
                     print(f'Other error occurred: {err}')
+            db_writer.create_views()
 
     def release(self, df_release) -> None:
         print("Release data")
