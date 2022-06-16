@@ -35,6 +35,16 @@ def read_collection_artist_releases(
     collection_releases = _services.get_collection_artist_releases(db=db, id_artist=id_artist,skip=skip, limit=limit)
     return collection_releases
 
+@app.post("/release_videos/{id_release}")
+def read_release_videos(
+    id_release: int,
+    skip: int = 0,
+    limit: int = 10,
+    db: _orm.Session=_fastapi.Depends(_services.get_db),
+    ):
+    release_videos = _services.get_release_videos(db=db, id_release=id_release,skip=skip, limit=limit)
+    return release_videos
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -3,23 +3,21 @@ import datetime as _dt
 import pydantic as _pydantic
 
 
-class _CollectionArtistBase(_pydantic.BaseModel):
+class CollectionArtist(_pydantic.BaseModel):
     id_artist: str
     name_artist: str
     url_artist_image: str
     qty_collection_items: str
 
 
-class CollectionArtist(_CollectionArtistBase):
-    pass
-
-
-class _CollectionReleaseBase(_pydantic.BaseModel):
+class CollectionRelease(_pydantic.BaseModel):
     id_artist: str
     name_artist: str
     name_release: str
     url_cover: str
 
 
-class CollectionRelease(_CollectionReleaseBase):
-    pass
+class ReleaseVideo(_pydantic.BaseModel):
+    id_release: int
+    title: str
+    url_video: str
