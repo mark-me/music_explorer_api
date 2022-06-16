@@ -18,7 +18,7 @@ def main():
     discogs_extractor = _extract.Discogs(name_discogs_user=name_discogs_user, discogs_token=token_discogs, db_file=db_file)
     discogs_extractor.collection_items()
     discogs_extractor.artists_collection()
-    discogs_extractor.artists_aliases()
+    # discogs_extractor.artists_aliases()
     discogs_extractor.artists_members()
     discogs_extractor.artists_groups()
 

@@ -1,25 +1,23 @@
-from http.client import TOO_MANY_REQUESTS
+import time
+import datetime as dt
+import json
+import numpy as np
+import pandas as pd
+import tornado
+from tqdm import tqdm
 import requests
 from requests.auth import AuthBase
 from requests.exceptions import HTTPError
 from requests.sessions import HTTPAdapter
 from requests.adapters import Retry
 from requests_toolbelt import sessions
-import json
-import numpy as np
-import pandas as pd
-
-import time
-import datetime as dt
-import tornado
-from tqdm import tqdm
 
 import derive as _derive
 import db_writer as _db_writer
 import db_reader as _db_reader
 
-SLEEP_TOO_MANY_REQUESTS = 10
-SLEEP_BETWEEN_CALLS = 1
+SLEEP_TOO_MANY_REQUESTS = 5
+SLEEP_BETWEEN_CALLS = 2
 
 
 class TokenAuth(AuthBase):
