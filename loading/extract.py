@@ -157,4 +157,14 @@ class Discogs:
         collection_reader = _db_reader.Collection(db_file=self.db_file)
         #df_artists = collection_reader.new_artists()
         self.artists(df_artists=df_artists)
+        
+    def artists_from_collection(self) -> None:
+        self.artists_collection()
+        db_reader = _db_reader.Artists(db_file=self.db_file)
+        qty_artis_not_added = db_reader.get_qty_artis_not_added()
+        while qty_artis_not_added > 0:
+            self.artists_aliases()
+            self.artists_members()
+            self.artists_groups()
+            qty_artis_not_added = db_reader.get_qty_artis_not_added()
  

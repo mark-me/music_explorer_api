@@ -58,3 +58,20 @@ class Artists(_DBStorage):
                          WHERE id_group NOT IN (SELECT id_artist FROM artist) AND\
                                api_group IS NOT NULL AND LENGTH(api_group) > 0;"
         return pd.read_sql_query(sql_statement, con=db)
+    
+    def get_qty_artis_not_added(self) -> int:
+        conn = sqlite3.connect(self.db_file)
+        cursor = conn.cursor()
+        sql = "SELECT COUNT(*)\
+                FROM (  SELECT DISTINCT id_member AS id_artist, api_member as api_artist\
+                        FROM artist_members\
+                        UNION\
+                        SELECT DISTINCT id_alias, api_alias\
+                        FROM artist_aliases\
+                        UNION\
+                        SELECT DISTINCT id_group, api_group\
+                        FROM artist_groups)\
+                        WHERE id_member NOT IN (SELECT id_artist FROM artist) AND\
+                                api_member IS NOT NULL AND LENGTH(api_member) > 0;"
+        cursor.execute(sql)
+        return cursor.fetchone()[0]
