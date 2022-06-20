@@ -1,16 +1,13 @@
+import os
 import time
 import datetime as dt
+import yaml
 import json
 import numpy as np
 import pandas as pd
 import tornado
 from tqdm import tqdm
-import requests
-from requests.auth import AuthBase
-from requests.exceptions import HTTPError
-from requests.sessions import HTTPAdapter
-from requests.adapters import Retry
-from requests_toolbelt import sessions
+import discogs_client
 
 import derive as _derive
 import db_writer as _db_writer
@@ -18,92 +15,57 @@ import db_reader as _db_reader
 
 SLEEP_TOO_MANY_REQUESTS = 5
 SLEEP_BETWEEN_CALLS = 2
-
-
-class TokenAuth(AuthBase):
-    def __init__(self, token):
-        self.token = token
-
-    def __call__(self, r):
-        r.headers['Discogs token'] = f'{self.token}'  # Python 3.6+
-        return r        
-
+      
 
 class Discogs:
-    def __init__(self, name_discogs_user: str, discogs_token: str, db_file: str) -> None:
-        self.name_discogs_user = name_discogs_user
-        self.discogs_token = discogs_token
+    def __init__(self, consumer_key: str, consumer_secret: str, db_file: str) -> None:
+        self.consumer_key = consumer_key
+        self.consumer_secret = consumer_secret
         self.db_file = db_file
-        self.retries = Retry(total=3, backoff_factor=10, status_forcelist=[ 429, 500, 502, 503, 504 ])
-        self.session = sessions.BaseUrlSession(base_url='https://api.discogs.com')
-        self.session.mount(prefix='https://api.discogs.com', adapter=HTTPAdapter(max_retries=self.retries))
+        self.client = self.__set_user_tokens()
+        
+    def __set_user_tokens(self) -> discogs_client.Client:
+        has_token = False
+        if os.path.isfile('loading/user_tokens.yml'):
+            with open(r'loading/user_tokens.yml') as file:
+                dict_token = yaml.load(file, Loader=yaml.FullLoader)
+            has_token = 'token' in dict_token and 'secret' in dict_token
+            
+        if not has_token:  
+            d = discogs_client.Client(user_agent='music_collection_api/1.0', 
+                                      consumer_key=self.consumer_key, 
+                                      consumer_secret=self.consumer_secret)   
+            url = d.get_authorize_url()
+            print("Visit " + url[2] + " to allow the client to access")
+            code_verify = input("Enter the verification code: ")
+            access_token = d.get_access_token(code_verify)
+            dict_token = {'token': access_token[0], 'secret': access_token[1]}
+            with open(r'loading/user_tokens.yml', 'w') as file:
+                documents = yaml.dump(dict_token, file)
+        else:
+            d = discogs_client.Client(user_agent='my_user_agent/1.0',
+                                      consumer_key=self.consumer_key,
+                                      consumer_secret=self.consumer_secret,
+                                      token=dict_token['token'],
+                                      secret=dict_token['secret'])
+        return d
 
-    def __get_qty_pages(self, url_request: str, ) -> int:
-        response = self.session.get(
-            url_request, 
-            params={'page': 1, 'per_page': 100}, 
-            auth=TokenAuth(self.discogs_token)
-            )
-        return response.json()["pagination"]["pages"]
+    def start(self) -> None:
+        self.collection_value()
+        self.collection_items()
+        #self.artists_from_collection()
+
+    def collection_value(self) -> None:
+        derive = _derive.Collection(db_file=self.db_file)
+        derive.value(self.client.identity())
 
     def collection_items(self) -> None:
-        db_writer = _db_writer.Collection(db_file=self.db_file)
-        db_writer.drop_tables()
-        no_pages = self.__get_qty_pages(
-            url_request="/users/" + self.name_discogs_user + "/collection/folders/0/releases"
-            )
-        if no_pages != 0:
-            print("Retrieve collection items")
-            for i in tqdm(range(1, no_pages + 1)):
-                url_request = "/users/" + self.name_discogs_user + "/collection/folders/0/releases" # Extract 
-                try:
-                    response = self.session.get(
-                        url_request,
-                        params={'page': i, 'per_page': 100}, 
-                        auth=TokenAuth(self.discogs_token)
-                        )
-                    df_items = pd.json_normalize(response.json()["releases"])
-                    if df_items.shape[0] > 0:
-                        derive = _derive.Collection(df_releases=df_items)   # Derive and store
-                        db_writer.items(df_items=df_items)
-                        db_writer.artists(df_artists=derive.artists())
-                        db_writer.formats(df_formats=derive.formats())
-                        db_writer.labels(df_labels=derive.labels())
-                        db_writer.genres(df_genres=derive.genres())
-                        db_writer.styles(df_styles=derive.styles())
-                        self.release(df_release=df_items)
-                        time.sleep(SLEEP_BETWEEN_CALLS)
-                except HTTPError as http_err:
-                    if response.status_code == 429:
-                        time.sleep(SLEEP_TOO_MANY_REQUESTS)
-                except Exception as err:
-                    print(f'Other error occurred: {err}')
-            db_writer.create_views()
-
-    def release(self, df_release) -> None:
-        print("Release data")
-        db_writer = _db_writer.Collection(db_file=self.db_file)
-        query = {'curr_abbr': 'EUR'}
-        for index, row in tqdm(df_release.iterrows(), total=df_release.shape[0]):
-            url_request = "/releases/" + str(row['id'])
-            try:
-                response = self.session.get(url_request, params=query, auth=TokenAuth(self.discogs_token))
-                response.raise_for_status()
-                df_item = pd.json_normalize(response.json())
-                df_item['id_release'] = row['id']
-                df_item['time_retrieved'] = dt.datetime.now()
-                if df_item.shape[0] > 0:
-                    derive = _derive.Release(df_release=df_item)
-                    db_writer.release_stats(df_release=df_item)
-                    db_writer.release_videos(derive.videos())
-                    db_writer.release_tracks(derive.tracks())
-                time.sleep(SLEEP_BETWEEN_CALLS)
-            except HTTPError as http_err:
-                if response.status_code == 429:
-                    time.sleep(SLEEP_TOO_MANY_REQUESTS)
-            except Exception as err:
-                print(f'Other error occurred: {err}')
-        
+        me = self.client.identity()
+        qty_items = me.collection_folders[0].count
+        for item in tqdm(me.collection_folders[0].releases, total=qty_items):
+            derive = _derive.CollectionItem(item=item, db_file=self.db_file)
+            derive.start()
+            
     def artists_from_collection(self) -> None:
         self.artists_collection()
         db_reader = _db_reader.Artists(db_file=self.db_file)
@@ -137,34 +99,23 @@ class Discogs:
         print("Retrieve artist groups")
         self.artists(df_artists=df_artists)
 
-    def artists(self, df_artists: pd.DataFrame) -> None:
-        db_writer = _db_writer.Artists(db_file=self.db_file)
-        for index, row in tqdm(df_artists.iterrows(), total=df_artists.shape[0]):
-            try:
-                response = self.session.get(row['api_artist'], auth=TokenAuth(self.discogs_token))  # Extract 
-                response.raise_for_status()
-                df_artist = pd.json_normalize(response.json())
-                if df_artist.shape[0] > 0:
-                    derive = _derive.Artists(df_artist=df_artist)   # Derive and store
-                    db_writer.artists(df_artists=df_artist)
-                    db_writer.images(df_images=derive.images())
-                    db_writer.urls(df_urls=derive.urls())
-                    db_writer.aliases(df_aliases=derive.aliases())
-                    db_writer.groups(df_groups=derive.groups())
-                    db_writer.members(df_members=derive.members()) 
-                    time.sleep(SLEEP_BETWEEN_CALLS)
-            except HTTPError as http_err:
-                if response.status_code == 429:
-                    time.sleep(SLEEP_TOO_MANY_REQUESTS)  
-                if response.status_code == 404:
-                    df_artist = row.to_frame().T
-                    df_artist['not_found'] = 1
-                    db_writer.artists(df_artists=df_artist) 
-            except Exception as err:
-                print(f'Other error occurred: {err}')
-
     def artist_releases(self, df_artists) -> None:
         collection_reader = _db_reader.Collection(db_file=self.db_file)
         #df_artists = collection_reader.new_artists()
         self.artists(df_artists=df_artists)
  
+ 
+class Database:
+    def __init__(self, db_file: str) -> None:
+        self.db_file = db_file
+
+    def start(self) -> None:
+        db_reader = _db_reader.Artists(db_file=self.db_file)
+        db_writer = _db_writer.ArtistNetwork(db_file=self.db_file)
+        df_vertices = db_reader.vertices()
+        df_edges = db_reader.edges()   
+        derive = _derive.ArtistNetwork(df_vertices=df_vertices, df_edges=df_edges)
+        if df_edges.shape[0] > 0 and df_vertices.shape[0] > 0:
+            db_writer.cluster_hierarchy(df_hierarchy=derive.cluster_betweenness())
+            db_writer.centrality(df_centrality=derive.centrality())
+            print("Ooohhh.... There is something to cluster")
