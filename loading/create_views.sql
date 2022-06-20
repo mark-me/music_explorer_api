@@ -1,17 +1,22 @@
 DROP VIEW IF EXISTS vw_artists_qty_in_collection;
 
 CREATE VIEW vw_artists_qty_in_collection AS
-    SELECT artists.id_artist AS id_artist,
-        artists.name_artist AS name_artist,
-        artists.url_image AS url_artist_image,
-        COUNT(*) AS qty_collection_items
-    FROM artists
-    INNER JOIN collection_artists
-        ON collection_artists.id_artist = artists.id_artist
-    INNER JOIN collection_items
-        ON collection_items.id_release = collection_artists.id_release
-    GROUP BY artists.id_artist, artists.name_artist
-    ORDER BY qty_collection_items DESC;
+	SELECT artist.id_artist, 
+	       name_artist, 
+	       artist_images.url_image AS url_image,
+	       COUNT(*) AS qty_collection_items
+	FROM artist
+	LEFT JOIN artist_images
+	    ON artist_images.id_artist = artist.id_artist
+	INNER JOIN release_artists
+	    ON artist.id_artist = release_artists.id_artist
+	INNER JOIN release
+	    ON release.id_release = release_artists.id_release
+	INNER JOIN collection_items
+	   ON collection_items.id_release = release.id_release
+	WHERE artist_images.type = 'primary' OR artist_images.type IS NULL
+	GROUP BY artist.id_artist, name_artist, artist_images.url_image
+	ORDER BY COUNT(*) DESC;
 
 DROP VIEW IF EXISTS vw_artist_collection_releases;
 

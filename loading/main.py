@@ -11,8 +11,8 @@ def main():
 
     discogs_extractor = _extract.Discogs(consumer_key=consumer_key, consumer_secret=consumer_secret, db_file=db_file)
     discogs_extractor.start()
-    db_extractor = _extract.Database(db_file=db_file)
-    db_extractor.start()
+    #db_extractor = _extract.Database(db_file=db_file)
+    #db_extractor.start()
 
 
 if __name__ == "__main__":

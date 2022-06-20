@@ -75,7 +75,7 @@ class Artists():
                 lst_aliases.append(df_alias)
             if len(lst_aliases) > 0:
                 df_aliases = pd.concat(lst_aliases, axis=0, ignore_index=True)
-                df_aliases['id_artistt'] = artist.id
+                df_aliases['id_artist'] = artist.id
                 df_aliases = df_aliases.rename(columns={'id': 'id_alias', 'name': 'name_alias',\
                     'resource_url': 'api_alias', 'thumbnail_url': 'url_thumbnail'})
                 self.db_writer.aliases(df_aliases=df_aliases)
@@ -118,6 +118,7 @@ class Release():
         self.db_writer = _db_writer.Release(db_file=db_file)
 
     def start(self) -> None:
+        self.release_stats()
         exists = self.db_writer.in_db(id_release=self.__release.id)
         if not exists:
             self.release()
@@ -132,12 +133,13 @@ class Release():
             self.artists(self.__artists.start())
 
     def release(self) -> None:
-        dict_release = {'id_release': self.__release.id, 
-                        'title': self.__release.title,
-                        'country': self.__release.country,
-                        'url_thumbnail': self.__release.thumb,
-                        'year': self.__release.year}
-        df_release = pd.DataFrame(dict_release, index=[0])
+        df_release = pd.DataFrame([self.__release.data])
+        cols_release = ['id', 'master_id', 'title', 'thumb', 'cover_image', 'year', 'uri', 'country', 'released']
+        cols_df = df_release.columns.values.tolist()
+        cols = list(set(cols_release) & set(cols_df))
+        df_release = df_release[cols]
+        df_release = df_release.rename(columns={'id': 'id_release', 'master_id': 'id_master', 'cover_image': 'url_cover',\
+            'thumb': 'url_thumbnail', 'uri': 'url_release', 'released': 'date_released'})
         self.db_writer.release(df_release=df_release)
 
     def artists(self, df_artists: pd.DataFrame) -> None:
@@ -226,7 +228,7 @@ class Release():
                 lst_artist.append(df_artist)
         if len(lst_artist) > 0:
             df_artists = pd.concat(lst_artist, axis=0, ignore_index=True)  
-            df_artists = df_artists[['name', 'role', 'id', 'resource_url', 'thumbnail_url']]  
+            df_artists = df_artists[['name', 'role', 'id', 'resource_url', 'thumbnail_url', 'position']]  
             df_artists = df_artists.rename(columns={'name': 'name_artist', 'id': 'id_artist', 'resource_url': 'api_artist', 'thumbnail_url': 'url_thumbnail'})
             df_artists['id_release'] = self.__release.id 
             self.db_writer.track_artist(df_artists=df_artists)
@@ -242,7 +244,18 @@ class Release():
             df_videos = df_videos.rename(columns={'uri': 'url_video'})
             df_videos['id_release'] = self.__release.id
             self.db_writer.videos(df_videos=df_videos)
-        
+            
+    def release_stats(self) -> None:
+        df_stats = pd.DataFrame([self.__release.data])
+        df_stats = df_stats[['id', 'num_for_sale', 'lowest_price']]
+        df_stats['time_value_retrieved'] = dt.datetime.now()
+        df_stats = df_stats.rename(columns={'id': 'id_release', 'num_for_sale': 'qty_for_sale', 'lowest_price': 'amt_price_lowest'})        
+        dict_community = {key: self.__release.data['community'][key] for key in ['have', 'want']}
+        df_community = pd.DataFrame([dict_community])
+        df_community = df_community.rename(columns={'have': 'qty_has', 'want': 'qty_want'}) 
+        df_stats = pd.concat([df_stats, df_community], axis=1, join='inner')
+        self.db_writer.stats(df_stats=df_stats)
+
 
 class Collection():
     def __init__(self, db_file: str) -> None:

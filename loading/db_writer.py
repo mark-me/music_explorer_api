@@ -222,6 +222,9 @@ class Release(_DBStorage):
         if df_artists.shape[0] > 0: 
             self.store_append(df=df_artists, name_table='release_track_artists')    
 
+    def stats(self, df_stats: pd.DataFrame) -> None:
+        if df_stats.shape[0] > 0:
+            self.store_append(df=df_stats, name_table='release_stats')
 
 class ArtistNetwork(_DBStorage):
     def __init__(self, db_file) -> None:
