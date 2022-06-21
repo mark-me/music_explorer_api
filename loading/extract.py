@@ -1,11 +1,8 @@
 import os
-# import time
 import datetime as dt
 import yaml
-# import json
 import numpy as np
 import pandas as pd
-# import tornado
 from tqdm import tqdm
 import discogs_client
 
