@@ -1,11 +1,11 @@
 import os
-import time
+# import time
 import datetime as dt
 import yaml
-import json
+# import json
 import numpy as np
 import pandas as pd
-import tornado
+# import tornado
 from tqdm import tqdm
 import discogs_client
 
@@ -15,7 +15,7 @@ import db_reader as _db_reader
 
 SLEEP_TOO_MANY_REQUESTS = 5
 SLEEP_BETWEEN_CALLS = 2
-      
+
 
 class Discogs:
     def __init__(self, consumer_key: str, consumer_secret: str, db_file: str) -> None:
@@ -25,9 +25,10 @@ class Discogs:
         self.client = self.__set_user_tokens()
         
     def __set_user_tokens(self) -> discogs_client.Client:
+        file_user_token = '/data/user_tokens.yml'
         has_token = False
-        if os.path.isfile('loading/user_tokens.yml'):
-            with open(r'loading/user_tokens.yml') as file:
+        if os.path.isfile(file_user_token):
+            with open(file_user_token) as file:
                 dict_token = yaml.load(file, Loader=yaml.FullLoader)
             has_token = 'token' in dict_token and 'secret' in dict_token
             
@@ -40,10 +41,10 @@ class Discogs:
             code_verify = input("Enter the verification code: ")
             access_token = d.get_access_token(code_verify)
             dict_token = {'token': access_token[0], 'secret': access_token[1]}
-            with open(r'loading/user_tokens.yml', 'w') as file:
+            with open(file_user_token, 'w') as file:
                 documents = yaml.dump(dict_token, file)
         else:
-            d = discogs_client.Client(user_agent='my_user_agent/1.0',
+            d = discogs_client.Client(user_agent='music_collection_api/1.0',
                                       consumer_key=self.consumer_key,
                                       consumer_secret=self.consumer_secret,
                                       token=dict_token['token'],
