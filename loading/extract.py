@@ -10,9 +10,6 @@ import derive as _derive
 import db_writer as _db_writer
 import db_reader as _db_reader
 
-SLEEP_TOO_MANY_REQUESTS = 5
-SLEEP_BETWEEN_CALLS = 2
-
 
 class Discogs:
     def __init__(self, consumer_key: str, consumer_secret: str, db_file: str) -> None:
