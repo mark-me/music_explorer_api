@@ -46,9 +46,9 @@ class Discogs:
         return d
 
     def start(self) -> None:
-        self.collection_value()
-        self.collection_items()
-        #self.artists_from_collection()
+        #self.collection_value()
+        #self.collection_items()
+        self.artists_from_collection()
 
     def collection_value(self) -> None:
         derive = _derive.Collection(db_file=self.db_file)
@@ -62,38 +62,17 @@ class Discogs:
             derive.start()
             
     def artists_from_collection(self) -> None:
-        self.artists_collection()
-        db_reader = _db_reader.Artists(db_file=self.db_file)
-        qty_artis_not_added = db_reader.get_qty_artis_not_added()
-        while qty_artis_not_added > 0:
-            self.artists_aliases()
-            self.artists_members()
-            self.artists_groups()
-            qty_artis_not_added = db_reader.get_qty_artis_not_added()
-
-    def artists_collection(self) -> None:
         db_reader = _db_reader.Collection(db_file=self.db_file)
-        df_artists = db_reader.new_artists()
-        self.artists(df_artists=df_artists)
-
-    def artists_aliases(self) -> None:
-        db_reader = _db_reader.Artists(db_file=self.db_file)
-        df_artists = db_reader.new_aliases()
-        print("Retrieve artist aliases")
-        self.artists(df_artists=df_artists)
-
-    def artists_members(self) -> None:
-        db_reader = _db_reader.Artists(db_file=self.db_file)
-        df_artists = db_reader.new_members()
-        print("Retrieve group members")
-        self.artists(df_artists=df_artists)
-
-    def artists_groups(self) -> None:
-        db_reader = _db_reader.Artists(db_file=self.db_file)
-        df_artists = db_reader.new_groups()
-        print("Retrieve artist groups")
-        self.artists(df_artists=df_artists)
-
+        qty_artis_not_added = db_reader.qty_artists_not_added()
+        while qty_artis_not_added > 0:
+            qty_artis_not_added = db_reader.qty_artists_not_added()
+            df_artists_new = db_reader.artists_not_added()
+            lst_artists = []
+            for index, row in df_artists_new.iterrows():
+                lst_artists.append(self.client.artist(id=row['id_artist']))
+            derive = _derive.Artists(artist=lst_artists, db_file=self.db_file)
+            derive.start()
+            
     def artist_releases(self, df_artists) -> None:
         collection_reader = _db_reader.Collection(db_file=self.db_file)
         #df_artists = collection_reader.new_artists()

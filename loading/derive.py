@@ -4,38 +4,32 @@ import numpy as np
 import pandas as pd
 import igraph as igraph
 import discogs_client
+from tqdm import tqdm
 
 import db_writer as _db_writer
 
+
 class Artists():
     def __init__(self, artist: discogs_client.Artist, db_file: str) -> None:
-        self.__artist = artist
+        self.__artists = artist
         self.db_writer = _db_writer.Artists(db_file=db_file)
 
-    def start(self) -> pd.DataFrame:
+    def start(self) -> None:
          df_artists = self.artist()
-         return df_artists
 
-    def artist(self) -> pd.DataFrame:
-        lst_artist = []
-        for artist in self.__artist:
-            df_artist = pd.DataFrame([artist.data])
-            lst_artist.append(df_artist)
+    def artist(self) -> None:
+        for artist in tqdm(self.__artists, total = len(self.__artists)):
             exists = self.db_writer.in_db(id_artist=artist.id)
             if not exists:
+                df_artist = pd.DataFrame([artist.data])
+                df_artist = df_artist[['name', 'id']]
+                df_artist = df_artist.rename(columns={'name': 'name_artist', 'id': 'id_artist'})
+                self.db_writer.artists(df_artists=df_artist)
                 self.images(artist=artist)
                 self.aliases(artist=artist)
                 self.groups(artist=artist)
                 self.members(artist=artist)
                 self.urls(artist=artist)
-        df_artists = pd.DataFrame()
-        if len(lst_artist) > 0:
-            df_artists = pd.concat(lst_artist, axis=0, ignore_index=True)
-            df_artists = df_artists[['name', 'role', 'id']]  
-            df_artists = df_artists.rename(columns={'name': 'name_artist', 'id': 'id_artist'})
-            if not exists:
-                self.db_writer.artists(df_artists=df_artists)
-        return df_artists
 
     def images(self, artist: discogs_client.Artist) -> None:
         try:
@@ -114,7 +108,7 @@ class Artists():
 class Release():
     def __init__(self, release: discogs_client.Release, db_file: str) -> None:
         self.__release = release
-        self.__artists = Artists(artist=release.artists, db_file=db_file)
+        self.__artistss = Artists(artist=release.artists, db_file=db_file)
         self.db_writer = _db_writer.Release(db_file=db_file)
 
     def start(self) -> None:
@@ -130,7 +124,7 @@ class Release():
             self.tracks()
             self.track_artists()
             self.videos()
-            self.artists(self.__artists.start())
+            self.artists(self.__artistss.start())
 
     def release(self) -> None:
         df_release = pd.DataFrame([self.__release.data])
