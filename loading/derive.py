@@ -197,7 +197,8 @@ class Release():
         if len(lst_artist) > 0:
             df_artists = pd.concat(lst_artist, axis=0, ignore_index=True)
             df_artists = df_artists[['name', 'role', 'id', 'resource_url', 'thumbnail_url']]  
-            df_artists = df_artists.rename(columns={'name': 'name_artist', 'id': 'id_artist', 'resource_url': 'api_artist', 'thumbnail_url': 'url_thumbnail'})      
+            df_artists = df_artists.rename(columns={'name': 'name_artist', 'id': 'id_artist', 'resource_url': 'api_artist',\
+                'thumbnail_url': 'url_thumbnail'})      
             df_artists['id_release'] = self.__release.id 
             self.db_writer.credits(df_credits=df_artists)
     
@@ -223,7 +224,8 @@ class Release():
         if len(lst_artist) > 0:
             df_artists = pd.concat(lst_artist, axis=0, ignore_index=True)  
             df_artists = df_artists[['name', 'role', 'id', 'resource_url', 'thumbnail_url', 'position']]  
-            df_artists = df_artists.rename(columns={'name': 'name_artist', 'id': 'id_artist', 'resource_url': 'api_artist', 'thumbnail_url': 'url_thumbnail'})
+            df_artists = df_artists.rename(columns={'name': 'name_artist', 'id': 'id_artist', 'resource_url': 'api_artist',\
+                'thumbnail_url': 'url_thumbnail'})
             df_artists['id_release'] = self.__release.id 
             self.db_writer.track_artist(df_artists=df_artists)
     
@@ -306,7 +308,8 @@ class CollectionItem():
         if len(lst_artist) > 0:
             df_artists = pd.concat(lst_artist, axis=0, ignore_index=True)
             df_artists = df_artists[['name', 'role', 'id', 'resource_url', 'thumbnail_url']]  
-            df_artists = df_artists.rename(columns={'name': 'name_artist', 'id': 'id_artist', 'resource_url': 'api_artist', 'thumbnail_url': 'url_thumbnail'})      
+            df_artists = df_artists.rename(columns={'name': 'name_artist', 'id': 'id_artist', 'resource_url': 'api_artist',\
+                'thumbnail_url': 'url_thumbnail'})      
             df_artists['id_release'] = self.__item.id 
         return df_artists
 
