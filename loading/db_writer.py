@@ -12,6 +12,7 @@ class _DBStorage():
         cursor = db_con.cursor()
         cursor.execute("SELECT count(name) FROM sqlite_master WHERE type='table' AND name='" + name_table + "'")
         does_exist = cursor.fetchone()[0]==1 
+        db_con.close()
         return does_exist
 
     def view_exists(self, name_view: str) -> bool:
@@ -19,6 +20,7 @@ class _DBStorage():
         cursor = db_con.cursor()
         cursor.execute("SELECT count(name) FROM sqlite_master WHERE type='view' AND name='" + name_view + "'")
         does_exist = cursor.fetchone()[0]==1 
+        db_con.close()
         return does_exist
 
     def drop_existing_table(self, name_table: str) -> None:
