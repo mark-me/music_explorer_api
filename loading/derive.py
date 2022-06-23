@@ -15,21 +15,20 @@ class Artists():
         self.db_writer = _db_writer.Artists(db_file=db_file)
 
     def start(self) -> None:
-         df_artists = self.artist()
-
-    def artist(self) -> None:
         for artist in tqdm(self.__artists, total = len(self.__artists)):
             exists = self.db_writer.in_db(id_artist=artist.id)
             if not exists:
-                df_artist = pd.DataFrame([artist.data])
-                df_artist = df_artist[['name', 'id']]
-                df_artist = df_artist.rename(columns={'name': 'name_artist', 'id': 'id_artist'})
-                self.db_writer.artists(df_artists=df_artist)
+                self.artist(artist=artist)
                 self.images(artist=artist)
                 self.aliases(artist=artist)
                 self.groups(artist=artist)
                 self.members(artist=artist)
                 self.urls(artist=artist)
+
+    def artist(self, artist: discogs_client.Artist) -> None:
+        dict_artist = {'id_artist': artist.data.get('id'), 'name_artist': artist.data.get('name')}
+        df_artist = pd.DataFrame([dict_artist])
+        self.db_writer.artists(df_artists=df_artist)
 
     def images(self, artist: discogs_client.Artist) -> None:
         try:
