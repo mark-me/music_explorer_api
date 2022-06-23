@@ -135,11 +135,6 @@ class Artists(_DBStorage):
     def artists(self, df_artists: pd.DataFrame) -> None:
         if df_artists.shape[0] == 0: return
         #if not self.table_exists('artist'): self.create_tables()
-        selected_columns = df_artists.columns[~df_artists.columns.isin([ 'images', 'members', 'aliases', 'groups', 'realname', 'namevariations',\
-            'message', 'urls' ])]
-        df_artists = df_artists[selected_columns]
-        df_artists = df_artists.rename(columns={'id': 'id_artist', 'name': 'name_artist', 'resource_url': 'api_artist', 'uri': 'url_artist',\
-            'releases_url': 'url_releases', 'profile': 'text_profile'})
         self.store_append(df=df_artists, name_table='artist')
 
     def aliases(self, df_aliases: pd.DataFrame) -> None:

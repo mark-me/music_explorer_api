@@ -26,7 +26,7 @@ class Artists():
                 self.urls(artist=artist)
 
     def artist(self, artist: discogs_client.Artist) -> None:
-        dict_artist = {'id_artist': artist.data.get('id'), 'name_artist': artist.data.get('name')}
+        dict_artist = {'id_artist': artist.id, 'name_artist': artist.name}
         df_artist = pd.DataFrame([dict_artist])
         self.db_writer.artists(df_artists=df_artist)
 
