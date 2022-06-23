@@ -112,7 +112,7 @@ class Release():
         self.db_writer = _db_writer.Release(db_file=db_file)
 
     def start(self) -> None:
-        self.release_stats()
+        self.stats()
         exists = self.db_writer.in_db(id_release=self.__release.id)
         if not exists:
             self.release()
@@ -241,7 +241,7 @@ class Release():
             df_videos['id_release'] = self.__release.id
             self.db_writer.videos(df_videos=df_videos)
             
-    def release_stats(self) -> None:
+    def stats(self) -> None:
         df_stats = pd.DataFrame([self.__release.data])
         df_stats = df_stats[['id', 'num_for_sale', 'lowest_price']]
         df_stats['time_value_retrieved'] = dt.datetime.now()
@@ -298,21 +298,6 @@ class CollectionItem():
         df_artist = df_artist[['id_release', 'id_artist', 'name_artist', 'api_artist']]
         self.db_writer.artists(df_artists=df_artist)
     
-    def artists2(self) -> pd.DataFrame:
-        lst_artist = []
-        for artist in self.__item.release.artists:
-            dict_artist = artist.data
-            df_artist = pd.DataFrame([artist.data])
-            lst_artist.append(df_artist)
-        df_artists = pd.DataFrame()
-        if len(lst_artist) > 0:
-            df_artists = pd.concat(lst_artist, axis=0, ignore_index=True)
-            df_artists = df_artists[['name', 'role', 'id', 'resource_url', 'thumbnail_url']]  
-            df_artists = df_artists.rename(columns={'name': 'name_artist', 'id': 'id_artist', 'resource_url': 'api_artist',\
-                'thumbnail_url': 'url_thumbnail'})      
-            df_artists['id_release'] = self.__item.id 
-        return df_artists
-
     def labels(self) -> None:
         df_label = pd.DataFrame(self.__item.data['basic_information']['labels'])
         df_label['id_release'] = self.__item.id
