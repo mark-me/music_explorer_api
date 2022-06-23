@@ -108,59 +108,49 @@ class Artists(_DBStorage):
             does_exist = cursor.fetchone()[0] > 0 
         else:
             does_exist = False
-        return does_exist        
+        return does_exist
+    
+    def write_data(self, df_data: pd.DataFrame, name_table: str) -> None:
+        if df_data.shape[0] > 0: 
+            self.create_table(name_table=name_table)
+            self.store_append(df=df_data, name_table=name_table)
 
-    def create_tables(self) -> None:
+    def create_table(self, name_table: str) -> None:
         db_con = sqlite3.connect(self.db_file)
         cursor = db_con.cursor()
-        if not self.table_exists('artist'):
-            sql = "CREATE TABLE artist(name_artist TEXT, id_artist INT, role TEXT);"
+        if not self.table_exists(name_table=name_table):
+            sql = ""
+            if name_table == 'artist':
+                sql = "CREATE TABLE artist(name_artist TEXT, id_artist INT, role TEXT);"
+            elif name_table == 'artist_aliases':
+                sql = "CREATE TABLE artist_aliases (id_alias INTEGER, name_alias TEXT, api_alias TEXT, id_artist INTEGER);"
+            elif name_table == 'artist_members':
+                sql = "CREATE TABLE artist_members (id_member INTEGER, name_member TEXT, api_member TEXT, is_active INTEGER, id_artist INTEGER)"
+            elif name_table == 'artist_groups':
+                sql = "CREATE TABLE artist_groups (id_group INTEGER, name_group TEXT, api_group TEXT, is_active INTEGER, id_artist INTEGER)"
+            elif name_table == 'artist_images':
+                sql = "CREATE TABLE artist_images (id_artist INTEGER, type TEXT, url_image TEXT, url_image_150 TEXT, width_image INTEGER, height_image INTEGER)"
+            elif name_table == 'artist_urls':
+                sql = "CREATE TABLE artist_urls (url_artist TEXT, id_artist INTEGER)"
             cursor.execute(sql)
-        if not self.table_exists('artist_aliases'):
-            sql = "CREATE TABLE artist_aliases (id_alias INTEGER, name_alias TEXT, api_alias TEXT, id_artist INTEGER);"
-            cursor.execute(sql)
-        if not self.table_exists('artist_members'):
-            sql = "CREATE TABLE artist_members (id_member INTEGER, name_member TEXT, api_member TEXT, is_active INTEGER, id_artist INTEGER)"
-            cursor.execute(sql)
-        if not self.table_exists('artist_groups'):
-            sql = "CREATE TABLE artist_groups (id_group INTEGER, name_group TEXT, api_group TEXT, is_active INTEGER, id_artist INTEGER)"
-            cursor.execute(sql)
-        if not self.table_exists('artist_images'):    
-            sql = "CREATE TABLE artist_images (id_artist INTEGER, type TEXT, url_image TEXT, url_image_150 TEXT, width_image INTEGER, height_image INTEGER)"
-            cursor.execute(sql)
-        if not self.table_exists('artist_urls'):      
-            sql = "CREATE TABLE artist_urls (url_artist TEXT, id_artist INTEGER)"
-            cursor.execute(sql)
-
+        
     def artists(self, df_artists: pd.DataFrame) -> None:
-        if df_artists.shape[0] == 0: return
-        #if not self.table_exists('artist'): self.create_tables()
-        self.store_append(df=df_artists, name_table='artist')
+        self.write_data(df_data=df_artists, name_table='artist')
 
     def aliases(self, df_aliases: pd.DataFrame) -> None:
-        if df_aliases.shape[0] == 0: return
-        #if not self.table_exists('artist_aliases'): self.create_tables()
-        self.store_append(df=df_aliases, name_table='artist_aliases')
+        self.write_data(df_data=df_aliases, name_table='artist_aliases')
 
     def members(self, df_members: pd.DataFrame) -> None:
-        if df_members.shape[0] == 0: return
-        #if not self.table_exists('artist_members'): self.create_tables()
-        self.store_append(df=df_members, name_table='artist_members')
+        self.write_data(df_data=df_members, name_table='artist_members')
 
     def groups(self, df_groups: pd.DataFrame) -> None:
-        if df_groups.shape[0] == 0: return
-        #if not self.table_exists('artist_groups'): self.create_tables()
-        self.store_append(df=df_groups, name_table='artist_groups')
+        self.write_data(df_data=df_groups, name_table='artist_groups')
 
     def images(self, df_images: pd.DataFrame) -> None:
-        if df_images.shape[0] == 0: return
-        #if not self.table_exists('artist_images'): self.create_tables()
-        self.store_append(df=df_images, name_table='artist_images')
+        self.write_data(df_data=df_images, name_table='artist_images')
 
     def urls(self, df_urls: pd.DataFrame) -> None:
-        if df_urls.shape[0] == 0: return
-        #if not self.table_exists('artist_urls'): self.create_tables()
-        self.store_append(df=df_urls, name_table='artist_urls')
+        self.write_data(df_data=df_urls, name_table='artist_urls')
 
 
 class Release(_DBStorage):

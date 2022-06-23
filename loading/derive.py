@@ -40,7 +40,8 @@ class Artists():
                 df_images = pd.concat(lst_images, axis=0, ignore_index=True)
                 df_images['id_artist'] = artist.id
                 df_images = df_images[['id_artist', 'type', 'uri', 'uri150', 'width', 'height']]
-                df_images = df_images.rename(columns={'uri': 'url_image', 'uri150': 'url_image_150', 'width': 'width_image', 'height': 'height_image'})
+                df_images = df_images.rename(columns={'uri': 'url_image', 'uri150': 'url_image_150',\
+                                                      'width': 'width_image', 'height': 'height_image'})
                 self.db_writer.images(df_images=df_images)
         except:
             pass
@@ -84,8 +85,8 @@ class Artists():
             if len(lst_members) > 0:
                 df_members = pd.concat(lst_members, axis=0, ignore_index=True)
                 df_members['id_artist'] = artist.id
-                df_members = df_members.rename(columns={'id': 'id_member', 'name': 'name_member', 'resource_url': 'api_member', 'active': 'is_active',\
-                    'height': 'height_image', 'thumbnail_url': 'url_thumbnail'})
+                df_members = df_members.rename(columns={'id': 'id_member', 'name': 'name_member', 'resource_url': 'api_member',\
+                    'active': 'is_active', 'height': 'height_image', 'thumbnail_url': 'url_thumbnail'})
                 self.db_writer.members(df_members=df_members)
         except:
             pass
