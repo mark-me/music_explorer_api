@@ -30,8 +30,6 @@ class Artists(_DBStorage):
     def __init__(self, db_file) -> None:
         super().__init__(db_file)  
 
-
-
     def vertices(self) -> pd.DataFrame:
         db_con = sqlite3.connect(self.db_file)
         sql_statement = "SELECT * FROM artist"
