@@ -10,11 +10,13 @@ import db_writer as _db_writer
 
 
 class Artists():
+    """A class that processes artist related data
+    """
     def __init__(self, artist: discogs_client.Artist, db_file: str) -> None:
         self.__artists = artist
         self.db_writer = _db_writer.Artists(db_file=db_file)
 
-    def start(self) -> None:
+    def process(self) -> None:
         for artist in tqdm(self.__artists, total = len(self.__artists)):
             exists = self.db_writer.in_db(id_artist=artist.id)
             if not exists:
@@ -26,9 +28,12 @@ class Artists():
                 self.urls(artist=artist)
 
     def artist(self, artist: discogs_client.Artist) -> None:
-        dict_artist = {'id_artist': artist.id, 'name_artist': artist.name}
-        df_artist = pd.DataFrame([dict_artist])
-        self.db_writer.artists(df_artists=df_artist)
+        try:
+            dict_artist = {'id_artist': artist.id, 'name_artist': artist.name}
+            df_artist = pd.DataFrame([dict_artist])
+            self.db_writer.artists(df_artists=df_artist)
+        except:
+            pass
 
     def images(self, artist: discogs_client.Artist) -> None:
         try:
@@ -106,12 +111,14 @@ class Artists():
             pass
 
 class Release():
+    """A class that processes release related data
+    """
     def __init__(self, release: discogs_client.Release, db_file: str) -> None:
         self.__release = release
         self.__artistss = Artists(artist=release.artists, db_file=db_file)
         self.db_writer = _db_writer.Release(db_file=db_file)
 
-    def start(self) -> None:
+    def process(self) -> None:
         self.stats()
         exists = self.db_writer.in_db(id_release=self.__release.id)
         if not exists:
@@ -124,7 +131,7 @@ class Release():
             self.tracks()
             self.track_artists()
             self.videos()
-            self.artists(self.__artistss.start())
+            self.artists(self.__artistss.process())
 
     def release(self) -> None:
         df_release = pd.DataFrame([self.__release.data])
@@ -270,9 +277,9 @@ class CollectionItem():
         self.__release = Release(release=item.release, db_file=db_file)
         self.db_writer = _db_writer.Collection(db_file=db_file)
 
-    def start(self) -> None:
+    def process(self) -> None:
         self.item()
-        self.__release.start()
+        self.__release.process()
 
     def item(self) -> None:
         dict_item = {'id_release': self.__item.id,
