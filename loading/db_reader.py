@@ -13,7 +13,6 @@ class Collection(_DBStorage):
 
     def artists_not_added(self) -> pd.DataFrame:
         db_con = sqlite3.connect(self.db_file)
-        cursor = db_con.cursor()
         df_artist = pd.read_sql(sql="SELECT * FROM vw_artists_not_added;", con=db_con)
         db_con.close() 
         return df_artist
