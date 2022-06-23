@@ -20,9 +20,10 @@ class Collection(_DBStorage):
     def qty_artists_not_added(self) -> int:
         db_con = sqlite3.connect(self.db_file)
         cursor = db_con.cursor()
-        sql = "SELECT COUNT(*) FROM vw_artists_not_added;"
-        cursor.execute(sql)
-        return cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM vw_artists_not_added;")
+        qty_artists = cursor.fetchone()[0]
+        db_con.close()
+        return qty_artists
 
 
 class Artists(_DBStorage):
@@ -31,9 +32,12 @@ class Artists(_DBStorage):
 
     def vertices(self) -> pd.DataFrame:
         db_con = sqlite3.connect(self.db_file)
-        sql_statement = "SELECT * FROM artist"
-        return pd.read_sql_query(sql_statement, con=db_con)
+        df_vertices = pd.read_sql_query("SELECT * FROM artist", con=db_con)
+        db_con.close() 
+        return df_vertices
     
     def edges(self) -> pd.DataFrame:
         db_con = sqlite3.connect(self.db_file)
-        return pd.read_sql_query("SELECT * FROM vw_artist_edges", con=db_con)
+        df_edges = pd.read_sql_query("SELECT * FROM vw_artist_edges", con=db_con)
+        db_con.close() 
+        return df_edges
