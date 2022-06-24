@@ -50,16 +50,16 @@ class Discogs:
 
     def start(self) -> None:
         """Starts user's collection processing"""
-        self.collection_value()
-        self.collection_items()
-        self.artists_from_collection()
+        self.__collection_value()
+        self.__collection_items()
+        self.__artists_from_collection()
 
-    def collection_value(self) -> None:
+    def __collection_value(self) -> None:
         """Process the user's collection value statistics"""
         derive = _derive.Collection(db_file=self.db_file)
         derive.value(self.client.identity())
 
-    def collection_items(self) -> None:
+    def __collection_items(self) -> None:
         """Process the user's collection items"""
         me = self.client.identity()
         qty_items = me.collection_folders[0].count
@@ -67,7 +67,7 @@ class Discogs:
             derive = _derive.CollectionItem(item=item, db_file=self.db_file)
             derive.process()
             
-    def artists_from_collection(self) -> None:
+    def __artists_from_collection(self) -> None:
         """Process artist information derived from groups and memberships"""
         db_reader = _db_reader.Collection(db_file=self.db_file)
         qty_artists_not_added = db_reader.qty_artists_not_added()

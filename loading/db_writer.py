@@ -103,17 +103,6 @@ class Collection(_DBStorage):
     def styles(self, df_styles: pd.DataFrame) -> None:
         if df_styles.shape[0] > 0:
             self.store_append(df=df_styles, name_table='collection_styles')    
-       
-"""     def release_stats(self, df_release: pd.DataFrame) -> None:        
-        selected_columns = df_release.columns[df_release.columns.isin(['id',\
-            'community.have', 'community.want', 'community.rating.count', 'community.rating.average',\
-            'date_added', 'date_changed', 'num_for_sale', 'lowest_price', 'released', 'time_retrieved'])]
-        df_release = df_release[selected_columns]
-        df_release = df_release.rename(columns={'id': 'id_release',\
-            'community.have': 'qty_have', 'community.want': 'qty_want', 'community.rating.count': 'qty_ratings',\
-            'community.rating.average': 'avg_rating', 'num_for_sale': 'qty_for_sale', 'lowest_price': 'amt_price_lowest',\
-            'released': 'date_released'})
-        self.store_append(df=df_release, name_table='collection_stats')  """
 
 
 class Artists(_DBStorage):
