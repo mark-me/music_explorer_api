@@ -37,25 +37,30 @@ class Artists():
                 db_writer.urls(df_urls=df_urls)
 
     def artist(self, artist: discogs_client.Artist) -> pd.DataFrame:
+        df_artist = pd.DataFrame()
         try:
             dict_artist = {'id_artist': artist.id, 'name_artist': artist.name}
             df_artist = pd.DataFrame([dict_artist])
-            return df_artist
         except:
-            return pd.DataFrame()
+            pass
+        return df_artist
         
     def masters(self, artist: discogs_client.Artist) -> pd.DataFrame:
         lst_masters = []
-        qty_pages = artist.releases.pages
-        for page_no in tqdm(range(1, qty_pages), total=qty_pages-1, desc=artist.name + " - Masters"):
-            page = artist.releases.page(page_no)
-            lst_masters = lst_masters + [master.data for master in page]
-        df_masters = pd.DataFrame(lst_masters)
-        if not df_masters.empty:
-            df_masters['id_artist'] = artist.id
-            df_masters = df_masters[['id_artist', 'id', 'title', 'type', 'main_release', 'artist', 'role', 'year', 'thumb']]
-            df_masters = df_masters.rename(columns={'id': 'id_master', 'main_release': 'id_main_release',\
-                                                        'artist': 'name_artist', 'thumb': 'url_thumb'})
+        df_masters = pd.DataFrame()
+        try:
+            qty_pages = artist.releases.pages
+            for page_no in tqdm(range(1, qty_pages), total=qty_pages-1, desc=artist.name + " - Masters"):
+                page = artist.releases.page(page_no)
+                lst_masters = lst_masters + [master.data for master in page]
+            df_masters = pd.DataFrame(lst_masters)
+            if not df_masters.empty:
+                df_masters['id_artist'] = artist.id
+                df_masters = df_masters[['id_artist', 'id', 'title', 'type', 'main_release', 'artist', 'role', 'year', 'thumb']]
+                df_masters = df_masters.rename(columns={'id': 'id_master', 'main_release': 'id_main_release',\
+                                                            'artist': 'name_artist', 'thumb': 'url_thumb'})
+        except:
+            pass
         return df_masters
         
     def images(self, artist: discogs_client.Artist) -> pd.DataFrame:
@@ -76,9 +81,9 @@ class Artists():
         return df_images        
 
     def groups(self, artist: discogs_client.Artist) -> pd.DataFrame:
+        lst_groups = []
+        df_groups = pd.DataFrame()
         try:
-            lst_groups = []
-            df_groups = pd.DataFrame()
             for group in artist.groups:
                 df_group = pd.DataFrame([group.data])
                 lst_groups.append(df_group)
@@ -88,13 +93,13 @@ class Artists():
                 df_groups = df_groups.rename(columns={'id': 'id_group', 'name': 'name_group', 'resource_url': 'api_group',\
                     'active': 'is_active', 'thumbnail_url': 'url_thumbnail'})
         except:
-            return df_groups
+            pass
         return df_groups
 
     def aliases(self, artist: discogs_client.Artist) -> pd.DataFrame:
+        lst_aliases = []
+        df_aliases = pd.DataFrame()
         try:
-            lst_aliases = []
-            df_aliases = pd.DataFrame()
             for alias in artist.aliases:
                 df_alias = pd.DataFrame([alias.data])
                 lst_aliases.append(df_alias)
@@ -104,13 +109,13 @@ class Artists():
                 df_aliases = df_aliases.rename(columns={'id': 'id_alias', 'name': 'name_alias',\
                     'resource_url': 'api_alias', 'thumbnail_url': 'url_thumbnail'})
         except:
-            return df_aliases
+            pass
         return df_aliases
 
     def members(self, artist: discogs_client.Artist) -> pd.DataFrame:
+        lst_members = []
+        df_members = pd.DataFrame()
         try:
-            lst_members = []
-            df_members = pd.DataFrame()
             for member in artist.members:
                 df_member = pd.DataFrame([member.data])
                 lst_members.append(df_member)
@@ -121,14 +126,14 @@ class Artists():
                     'active': 'is_active', 'height': 'height_image', 'thumbnail_url': 'url_thumbnail'})
                 self.db_writer.members(df_members=df_members)
         except:
-            return df_members
+            pass
         return df_members
 
 
     def urls(self, artist: discogs_client.Artist) -> pd.DataFrame:
+        lst_urls = []
+        df_urls = pd.DataFrame()
         try:
-            lst_urls = []
-            df_urls = pd.DataFrame()
             for url in artist.urls:
                 df_url = pd.DataFrame([url])
                 lst_urls.append(df_url)
@@ -137,7 +142,7 @@ class Artists():
                 df_urls['id_artist'] = artist.id
                 df_urls = df_urls.set_axis(['url_artist', 'id_artist'], axis=1)
         except:
-            return df_urls
+            pass
         return df_urls
 
 
@@ -191,9 +196,9 @@ class MasterRelease():
         return df_stats
     
     def styles(self) -> pd.DataFrame:
+        lst_styles = []
         df_styles = pd.DataFrame()
         if not self.d_release.styles is None:
-            lst_styles = []
             for style in self.d_release.styles:
                 df_style = pd.DataFrame([style])
                 lst_styles.append(df_style)
@@ -382,8 +387,8 @@ class CollectionItem():
     def process(self) -> None:
         db_writer = _db_writer.Collection(db_file=self.db_file)
         df_item = self.__collection_item()
-        db_writer.items(df_items=df_item)
         self.__release.process()
+        db_writer.items(df_items=df_item)
 
     def __collection_item(self) -> pd.DataFrame:
         dict_item = {'id_release': self.__item.id,
