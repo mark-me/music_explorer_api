@@ -295,8 +295,8 @@ class Release(MasterRelease):
             db_writer.tracks(df_tracks=df_tracks)
             db_writer.track_artist(df_artists=df_track_artists)
             db_writer.videos(df_videos=df_videos)
-            db_writer.stats(df_stats=df_stats)
             self.__artists.process()
+        db_writer.stats(df_stats=df_stats)
 
     def release(self) -> pd.DataFrame:
         df_release = pd.DataFrame([self.d_release.data])
