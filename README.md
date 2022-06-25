@@ -1,6 +1,6 @@
 # music_explorer_api
 
-This repository is part of a project where people can explore their music collection for using a web-interface.
+This repository is part of a project where people can explore their music collection using a web-interface.
 
 The front end will be created by [Marcel Varkevisser](https://github.com/marcelvark) and can be found at ....
 
