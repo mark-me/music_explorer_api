@@ -9,7 +9,7 @@ class CollectionArtist(_database.Base):
 
     id_artist = _sql.Column(_sql.Integer, primary_key=True)
     name_artist = _sql.Column(_sql.String)
-    url_artist_image = _sql.Column(_sql.String)
+    url_image = _sql.Column(_sql.String)
     qty_collection_items = _sql.Column(_sql.Integer)
 
 
