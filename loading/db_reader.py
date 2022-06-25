@@ -13,9 +13,9 @@ class Collection(_DBStorage):
 
     def artists_not_added(self) -> pd.DataFrame:
         db_con = sqlite3.connect(self.db_file)
-        df_artist = pd.read_sql(sql="SELECT * FROM vw_artists_not_added;", con=db_con)
+        df_artists = pd.read_sql(sql="SELECT * FROM vw_artists_not_added;", con=db_con)
         db_con.close() 
-        return df_artist
+        return df_artists
 
     def qty_artists_not_added(self) -> int:
         db_con = sqlite3.connect(self.db_file)
@@ -24,6 +24,12 @@ class Collection(_DBStorage):
         qty_artists = cursor.fetchone()[0]
         db_con.close()
         return qty_artists
+    
+    def artists(self) -> pd.DataFrame:
+        db_con = sqlite3.connect(self.db_file)
+        df_artists = pd.read_sql(sql="SELECT * FROM artist;", con=db_con)
+        db_con.close() 
+        return df_artists       
 
 
 class Artists(_DBStorage):

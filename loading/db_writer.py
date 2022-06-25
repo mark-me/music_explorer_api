@@ -9,11 +9,11 @@ class _DBStorage():
     def __init__(self, db_file) -> None:
         self.db_file = db_file  
 
-    def write_data(self, df_data: pd.DataFrame, name_table: str) -> None:
+    def write_data(self, df: pd.DataFrame, name_table: str) -> None:
         """Write data to the database"""
-        if df_data.shape[0] > 0: 
+        if not df.empty: 
             self.create_table(name_table=name_table)
-            self.store_append(df=df_data, name_table=name_table)
+            self.store_append(df=df, name_table=name_table)
             
     def create_table(self, name_table: str) -> None:
         """Virtual function for creating tables"""
@@ -130,42 +130,104 @@ class Artists(_DBStorage):
             sql = ""
             if name_table == 'artist':
                 sql = "CREATE TABLE artist(name_artist TEXT, id_artist INT, role TEXT);"
+            elif name_table == 'artist_masters':
+                sql = "CREATE TABLE artist_masters (id_artist INTEGER, id_master INTEGER, title TEXT, type TEXT, id_main_release INTEGER,\
+                    name_artist TEXT, role TEXT, year INTEGER, url_thumb TEXT)"
             elif name_table == 'artist_aliases':
-                sql = "CREATE TABLE artist_aliases (id_alias INTEGER, name_alias TEXT, api_alias TEXT, id_artist INTEGER);"
+                sql = "CREATE TABLE artist_aliases (id_alias INTEGER, name_alias TEXT, api_alias TEXT, id_artist INTEGER,\
+                    url_thumbnail TEXT);"
             elif name_table == 'artist_members':
-                sql = "CREATE TABLE artist_members (id_member INTEGER, name_member TEXT, api_member TEXT, is_active INTEGER, id_artist INTEGER)"
+                sql = "CREATE TABLE artist_members (id_member INTEGER, name_member TEXT, api_member TEXT, is_active INTEGER, id_artist INTEGER,\
+                    url_thumbnail TEXT)"
             elif name_table == 'artist_groups':
-                sql = "CREATE TABLE artist_groups (id_group INTEGER, name_group TEXT, api_group TEXT, is_active INTEGER, id_artist INTEGER)"
+                sql = "CREATE TABLE artist_groups (id_group INTEGER, name_group TEXT, api_group TEXT, is_active INTEGER, id_artist INTEGER,\
+                    url_thumbnail TEXT)"
             elif name_table == 'artist_images':
-                sql = "CREATE TABLE artist_images (id_artist INTEGER, type TEXT, url_image TEXT, url_image_150 TEXT, width_image INTEGER, height_image INTEGER)"
+                sql = "CREATE TABLE artist_images (id_artist INTEGER, type TEXT,\
+                    url_image TEXT, url_image_150 TEXT, width_image INTEGER, height_image INTEGER)"
             elif name_table == 'artist_urls':
                 sql = "CREATE TABLE artist_urls (url_artist TEXT, id_artist INTEGER)"
             cursor.execute(sql)
         
     def artists(self, df_artists: pd.DataFrame) -> None:
         """Store the artist"""
-        self.write_data(df_data=df_artists, name_table='artist')
+        self.write_data(df=df_artists, name_table='artist')
+        
+    def masters(self, df_masters: pd.DataFrame) -> None:
+        """Store artist master releases"""
+        self.write_data(df=df_masters, name_table='artist_masters')
 
     def aliases(self, df_aliases: pd.DataFrame) -> None:
         """Store the artist's alias(es)"""
-        self.write_data(df_data=df_aliases, name_table='artist_aliases')
+        self.write_data(df=df_aliases, name_table='artist_aliases')
 
     def members(self, df_members: pd.DataFrame) -> None:
         """Store the group's members"""
-        self.write_data(df_data=df_members, name_table='artist_members')
+        self.write_data(df=df_members, name_table='artist_members')
 
     def groups(self, df_groups: pd.DataFrame) -> None:
         """Store the artist's groups she/he was part of"""
-        self.write_data(df_data=df_groups, name_table='artist_groups')
+        self.write_data(df=df_groups, name_table='artist_groups')
 
     def images(self, df_images: pd.DataFrame) -> None:
         """Store the artist's image(s)"""
-        self.write_data(df_data=df_images, name_table='artist_images')
+        self.write_data(df=df_images, name_table='artist_images')
 
     def urls(self, df_urls: pd.DataFrame) -> None:
         """Store the artist's url(s)"""
-        self.write_data(df_data=df_urls, name_table='artist_urls')
+        self.write_data(df=df_urls, name_table='artist_urls')
 
+
+class Master(_DBStorage):
+    def __init__(self, db_file) -> None:
+        super().__init__(db_file)
+
+    def in_db(self, id_master: int) -> bool:
+        """Checks if the master is already in the database"""
+        if self.table_exists(name_table='master'):
+            db_con = sqlite3.connect(self.db_file)
+            cursor = db_con.cursor()
+            cursor.execute("SELECT count(*) FROM master WHERE id_master=" + str(id_master) + "")
+            does_exist = cursor.fetchone()[0] > 0 
+        else:
+            does_exist = False
+        return does_exist    
+                
+    def master(self, df_master: pd.DataFrame) -> None:
+        """Store the master"""
+        if df_master.shape[0] > 0:
+            self.store_append(df=df_master, name_table='master')
+
+    def genres(self, df_genres: pd.DataFrame) -> None:
+        """Store the master's genre(s)"""
+        if df_genres.shape[0] > 0: 
+            self.store_append(df=df_genres, name_table='master_genres')  
+
+    def styles(self, df_styles: pd.DataFrame) -> None:
+        """Store the master's style(s)"""
+        if df_styles.shape[0] > 0:
+            self.store_append(df=df_styles, name_table='master_styles')    
+
+    def videos(self, df_videos: pd.DataFrame) -> None:
+        """Store the master's video(s)"""
+        if df_videos.shape[0] > 0:
+            self.store_append(df=df_videos, name_table='master_videos') 
+
+    def tracks(self, df_tracks: pd.DataFrame) -> None:
+        """Store the master's track(s)"""
+        if df_tracks.shape[0] > 0:
+            self.store_append(df=df_tracks, name_table='master_tracks') 
+        
+    def track_artist(self, df_artists: pd.DataFrame) -> None:
+        """Store the master's track artist(s)"""
+        if df_artists.shape[0] > 0: 
+            self.store_append(df=df_artists, name_table='master_track_artists')    
+
+    def stats(self, df_stats: pd.DataFrame) -> None:
+        """Store the master's marketplace statistics"""
+        if df_stats.shape[0] > 0:
+            self.store_append(df=df_stats, name_table='master_stats')
+            
 
 class Release(_DBStorage):
     def __init__(self, db_file) -> None:
