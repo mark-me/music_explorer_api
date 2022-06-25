@@ -3,10 +3,19 @@ from typing import List
 import uvicorn
 
 import fastapi as _fastapi
+from fastapi.middleware.cors import CORSMiddleware
 import sqlalchemy.orm as _orm
 import services as _services, schemas as _schemas
 
 app = _fastapi.FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=['*'],
+    allow_credentials=True,
+    allow_methods=['*'],
+    allow_headers=['*'],
+)
 
 _services.create_database()
 
