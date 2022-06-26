@@ -4,7 +4,8 @@ import database as _database, models as _models, schemas as _schemas
 
 
 def create_database():
-    db_collection = _database.ViewCollection()
+    db_file = '/data/music_collection.db'
+    db_collection = _database.ViewCollection(db_file=db_file)
     db_collection.artist_collection_items()
     db_collection.artists_in_collection()
     return _database.Base.metadata.create_all(bind=_database.engine)
