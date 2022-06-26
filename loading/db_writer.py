@@ -3,6 +3,7 @@ from unicodedata import name
 import numpy as np
 import pandas as pd
 
+
 class _DBStorage():
     """A base class for storing discogs data
     """
@@ -56,6 +57,7 @@ class _DBStorage():
         db_con = sqlite3.connect(self.db_file)
         df.to_sql(name=name_table, con=db_con, if_exists='append', index=False) 
         db_con.close()   
+
 
 class Collection(_DBStorage):
     """A class for storing collection item data
@@ -148,11 +150,11 @@ class Artists(_DBStorage):
             elif name_table == 'artist_urls':
                 sql = "CREATE TABLE artist_urls (url_artist TEXT, id_artist INTEGER)"
             cursor.execute(sql)
-        
+
     def artists(self, df_artists: pd.DataFrame) -> None:
         """Store the artist"""
         self.write_data(df=df_artists, name_table='artist')
-        
+
     def masters(self, df_masters: pd.DataFrame) -> None:
         """Store artist master releases"""
         self.write_data(df=df_masters, name_table='artist_masters')
@@ -192,7 +194,7 @@ class Master(_DBStorage):
         else:
             does_exist = False
         return does_exist    
-                
+ 
     def master(self, df_master: pd.DataFrame) -> None:
         """Store the master"""
         if df_master.shape[0] > 0:
@@ -227,7 +229,7 @@ class Master(_DBStorage):
         """Store the master's marketplace statistics"""
         if df_stats.shape[0] > 0:
             self.store_append(df=df_stats, name_table='master_stats')
-            
+
 
 class Release(_DBStorage):
     def __init__(self, db_file) -> None:
@@ -243,7 +245,7 @@ class Release(_DBStorage):
         else:
             does_exist = False
         return does_exist    
-                
+
     def release(self, df_release: pd.DataFrame) -> None:
         """Store the release"""
         if df_release.shape[0] > 0:
@@ -288,7 +290,7 @@ class Release(_DBStorage):
         """Store the release's track(s)"""
         if df_tracks.shape[0] > 0:
             self.store_append(df=df_tracks, name_table='release_tracks') 
-        
+
     def track_artist(self, df_artists: pd.DataFrame) -> None:
         """Store the release's track artist(s)"""
         if df_artists.shape[0] > 0: 
@@ -298,6 +300,7 @@ class Release(_DBStorage):
         """Store the release's marketplace statistics"""
         if df_stats.shape[0] > 0:
             self.store_append(df=df_stats, name_table='release_stats')
+
 
 class ArtistNetwork(_DBStorage):
     def __init__(self, db_file) -> None:

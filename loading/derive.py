@@ -18,7 +18,7 @@ class Artists():
 
     def process(self) -> None:
         db_writer = _db_writer.Artists(db_file=self.db_file)        
-        for artist in self.__d_artists:
+        for artist in tqdm(self.__d_artists, total=len(self.__d_artists), desc="Artists"):
             exists = db_writer.in_db(id_artist=artist.id)
             if not exists:
                 df_artists = self.artist(artist=artist)
@@ -44,7 +44,7 @@ class Artists():
         except:
             pass
         return df_artist
-        
+
     def masters(self, artist: discogs_client.Artist) -> pd.DataFrame:
         lst_masters = []
         df_masters = pd.DataFrame()
@@ -62,7 +62,7 @@ class Artists():
         except:
             pass
         return df_masters
-        
+
     def images(self, artist: discogs_client.Artist) -> pd.DataFrame:
         try:
             lst_images = []
@@ -181,10 +181,10 @@ class MasterRelease():
             db_writer.tracks(df_tracks=df_tracks)
             db_writer.track_artist(df_track_artists=df_track_artists)
             db_writer.videos(df_videos=df_videos)
-            
+
     def master(self) -> pd.DataFrame:
         pass
-    
+
     def stats(self) -> pd.DataFrame:
         stats = self.d_release.data['stats']
         dict_stats = {'id_master': self.d_release.id,
@@ -192,7 +192,7 @@ class MasterRelease():
                       'qty_has': stats['community']['in_collection']}
         df_stats = pd.DataFrame([dict_stats])
         return df_stats
-    
+
     def styles(self) -> pd.DataFrame:
         lst_styles = []
         df_styles = pd.DataFrame()
@@ -229,7 +229,7 @@ class MasterRelease():
             df_tracks = df_tracks[['position', 'title', 'duration']]
             df_tracks['id_release'] = self.d_release.id
         return df_tracks
-    
+
     def track_artists(self) -> pd.DataFrame:
         lst_artist = []
         df_artists = pd.DataFrame()
@@ -246,7 +246,7 @@ class MasterRelease():
                 'thumbnail_url': 'url_thumbnail'})
             df_artists['id_release'] = self.d_release.id 
         return df_artists
-    
+
     def videos(self) -> pd.DataFrame:
         lst_video = []
         df_videos = pd.DataFrame()
@@ -260,7 +260,7 @@ class MasterRelease():
             df_videos['id_release'] = self.d_release.id
         return df_videos
 
-    
+
 class Release(MasterRelease):
     """A class that processes release related data
     """
@@ -284,7 +284,7 @@ class Release(MasterRelease):
             df_videos = self.videos()
             df_release_artists = self.release_artists()
             db_writer.release(df_release=df_release)
-            #db_writer.artists(df_artists=df_release_artists)
+            db_writer.artists(df_artists=df_release_artists)
             db_writer.labels(df_labels=df_labels)
             db_writer.formats(df_formats=df_formats)
             db_writer.genres(df_genres=df_genres)
@@ -352,7 +352,7 @@ class Release(MasterRelease):
                 'thumbnail_url': 'url_thumbnail'})      
             df_artists['id_release'] = self.d_release.id 
         return df_artists
-            
+
     def stats(self) -> pd.DataFrame:
         df_stats = pd.DataFrame([self.d_release.data])
         df_stats = df_stats[['id', 'num_for_sale', 'lowest_price']]
@@ -375,6 +375,7 @@ class Collection():
         df_value['qty_items'] = user.num_collection
         df_value['time_value_retrieved'] = dt.datetime.now()
         self.db_writer.value(df_value=df_value)
+
 
 class CollectionItem():
     def __init__(self, item: discogs_client.CollectionItemInstance, db_file: str) -> None:
@@ -409,7 +410,7 @@ class ArtistNetwork():
     def __init__(self, df_vertices: pd.DataFrame, df_edges: pd.DataFrame) -> None:
         self.df_vertices = df_vertices
         self.df_edges = df_edges
-        
+
     def cluster_betweenness(self) -> pd.DataFrame:
         df_hierarchy = pd.DataFrame()
         return df_hierarchy

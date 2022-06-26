@@ -19,7 +19,7 @@ class Discogs:
         self.consumer_secret = consumer_secret
         self.db_file = db_file
         self.client = self.__set_user_tokens()
-        
+
     def __set_user_tokens(self) -> discogs_client.Client:
         """Set-up the user's account to use with for the extraction using Discogs API"""
         file_user_token = '/data/user_tokens.yml'
@@ -28,7 +28,6 @@ class Discogs:
             with open(file_user_token) as file:
                 dict_token = yaml.load(file, Loader=yaml.FullLoader)
             has_token = 'token' in dict_token and 'secret' in dict_token
-            
         if not has_token:  
             d = discogs_client.Client(user_agent='music_collection_api/1.0', 
                                       consumer_key=self.consumer_key, 
@@ -50,8 +49,8 @@ class Discogs:
 
     def start(self) -> None:
         """Starts user's collection processing"""
-        self.__collection_value()
-        self.__collection_items()
+        #self.__collection_value()
+        #self.__collection_items()
         self.__artists_from_collection()
 
     def __collection_value(self) -> None:
@@ -66,7 +65,7 @@ class Discogs:
         for item in tqdm(me.collection_folders[0].releases, total=qty_items, desc="Collection items"):
             derive = _derive.CollectionItem(item=item, db_file=self.db_file)
             derive.process()
-            
+
     def __artists_from_collection(self) -> None:
         """Process artist information derived from groups and memberships"""
         db_reader = _db_reader.Collection(db_file=self.db_file)
@@ -79,7 +78,7 @@ class Discogs:
                 lst_artists.append(self.client.artist(id=row['id_artist']))
             derive = _derive.Artists(artist=lst_artists, db_file=self.db_file)
             derive.process()
-            
+
  
 class Database:
     def __init__(self, db_file: str) -> None:

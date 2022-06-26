@@ -4,10 +4,10 @@ import pandas as pd
 
 class _DBStorage():
     def __init__(self, db_file) -> None:
-        self.__db_file = db_file
+        self.db_file = db_file
         
     def create_view(self, name_view:str, sql_definition: str) -> None:
-        db_con = sqlite3.connect(self.__db_file)
+        db_con = sqlite3.connect(self.db_file)
         cursor = db_con.cursor()
         sql = "CREATE VIEW " + name_view + " AS " + sql_definition +";"
         cursor.execute(sql)
@@ -15,7 +15,7 @@ class _DBStorage():
         db_con.close()
     
     def drop_view(self, name_view: str) -> None:
-        db_con = sqlite3.connect(self.__db_file)
+        db_con = sqlite3.connect(self.db_file)
         cursor = db_con.cursor()
         cursor.execute("DROP VIEW IF EXISTS " + name_view)
         db_con.commit()
@@ -29,10 +29,10 @@ class Collection(_DBStorage):
         
     def create_view_artists_not_added(self) -> None:
         name_view = 'vw_artists_not_added'
-        self.drop(name_view=name_view)
+        self.drop_view(name_view=name_view)
         sql_definition = "SELECT DISTINCT id_artist\
             FROM (\
-                SELECT id_artist FROM release_artists\
+                SELECT id_artist FROM artist_masters\
                 UNION\
                     SELECT id_alias FROM artist_aliases\
                     UNION\
@@ -41,17 +41,17 @@ class Collection(_DBStorage):
                             SELECT id_group FROM artist_groups\
                 )\
             WHERE id_artist NOT IN ( SELECT id_artist FROM artist )"
-        self.create(name_view=name_view, sql_definition=sql_definition)
+        self.create_view(name_view=name_view, sql_definition=sql_definition)
 
 
     def artists_not_added(self) -> pd.DataFrame:
-        db_con = sqlite3.connect(self.__db_file)
+        db_con = sqlite3.connect(self.db_file)
         df_artists = pd.read_sql(sql="SELECT * FROM vw_artists_not_added;", con=db_con)
         db_con.close() 
         return df_artists
 
     def qty_artists_not_added(self) -> int:
-        db_con = sqlite3.connect(self.__db_file)
+        db_con = sqlite3.connect(self.db_file)
         cursor = db_con.cursor()
         cursor.execute("SELECT COUNT(*) FROM vw_artists_not_added;")
         qty_artists = cursor.fetchone()[0]
@@ -59,7 +59,7 @@ class Collection(_DBStorage):
         return qty_artists
     
     def artists(self) -> pd.DataFrame:
-        db_con = sqlite3.connect(self.__db_file)
+        db_con = sqlite3.connect(self.db_file)
         df_artists = pd.read_sql(sql="SELECT * FROM artist;", con=db_con)
         db_con.close() 
         return df_artists       
@@ -70,13 +70,13 @@ class Artists(_DBStorage):
         super().__init__(db_file)  
 
     def vertices(self) -> pd.DataFrame:
-        db_con = sqlite3.connect(self.__db_file)
+        db_con = sqlite3.connect(self.db_file)
         df_vertices = pd.read_sql_query("SELECT * FROM artist", con=db_con)
         db_con.close() 
         return df_vertices
     
     def edges(self) -> pd.DataFrame:
-        db_con = sqlite3.connect(self.__db_file)
+        db_con = sqlite3.connect(self.db_file)
         df_edges = pd.read_sql_query("SELECT * FROM vw_artist_edges", con=db_con)
         db_con.close() 
         return df_edges
