@@ -54,7 +54,6 @@ class Discogs:
         self.__collection_value()
         self.__collection_items()
         self.__artists_from_collection()
-        #self.__artist_masters()
 
     def __collection_value(self) -> None:
         """Process the user's collection value statistics"""
@@ -82,22 +81,6 @@ class Discogs:
             derive = _derive.Artists(artist=lst_artists, db_file=self.db_file)
             derive.process()
             
-    def __artist_masters(self) -> None:
-        collection_reader = _db_reader.Collection(db_file=self.db_file)
-        df_artists = collection_reader.artists()
-        lst_masters = []
-        for index, row in tqdm(df_artists.iterrows(), total=df_artists.shape[0], desc="Artists"):
-            d_artist = self.client.artist(id=row['id_artist'])
-            qty_pages = d_artist.releases.pages
-            for page_no in tqdm(range(1, qty_pages), total=qty_pages, desc=d_artist.name):
-                page = d_artist.releases.page(page_no)
-                lst_masters = lst_masters + [master.data for master in page]
-            df_masters = pd.DataFrame(lst_masters)
-            df_masters['id_artist'] = row['id_artist']
-            print(df_masters.head())   
-                #masters = _derive.MasterReleases(lst_masters=lst_masters, db_file=self.db_file)
-                #masters.process() 
-
  
 class Database:
     def __init__(self, db_file: str) -> None:
