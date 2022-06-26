@@ -49,7 +49,7 @@ class Discogs:
 
     def start(self) -> None:
         """Starts user's collection processing"""
-        self.__collection_value()
+        #self.__collection_value()
         #self.__collection_items()
         self.__artists_from_collection()
 

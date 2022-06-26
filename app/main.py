@@ -21,18 +21,14 @@ _services.create_database()
 
 @app.post("/collection_artists/")
 def read_collection_artists(
-    skip: int=0, 
-    limit: int=999, 
     db: _orm.Session=_fastapi.Depends(_services.get_db),
     ):
-    collection_artists = _services.get_collection_artists(db=db, skip=skip, limit=limit)
+    collection_artists = _services.get_collection_artists(db=db)
     return collection_artists
 
 @app.post("/collection_artist_releases/{id_artist}")
 def read_collection_artist_releases(
     id_artist: str,
-    skip: int = 0,
-    limit: int = 10,
     db: _orm.Session=_fastapi.Depends(_services.get_db),
     ):
     db_collection_artist  = _services.get_collection_artist(db=db, id_artist=id_artist)
@@ -40,17 +36,15 @@ def read_collection_artist_releases(
         raise _fastapi.HTTPException(
             status_code=404, detail="Sorry, this artist doesn't exist in your collection"
         )
-    collection_releases = _services.get_collection_artist_releases(db=db, id_artist=id_artist,skip=skip, limit=limit)
+    collection_releases = _services.get_collection_artist_releases(db=db, id_artist=id_artist)
     return collection_releases
 
 @app.post("/release_videos/{id_release}")
 def read_release_videos(
     id_release: int,
-    skip: int = 0,
-    limit: int = 10,
     db: _orm.Session=_fastapi.Depends(_services.get_db),
     ):
-    release_videos = _services.get_release_videos(db=db, id_release=id_release,skip=skip, limit=limit)
+    release_videos = _services.get_release_videos(db=db, id_release=id_release)
     return release_videos
 
 
