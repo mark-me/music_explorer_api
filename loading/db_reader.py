@@ -33,6 +33,7 @@ class Collection(_DBStorage):
         sql_definition = "SELECT DISTINCT id_artist\
             FROM (\
                 SELECT id_artist FROM artist_masters\
+                WHERE role IN ('Main', 'Appearance', 'TrackAppearance')\
                 UNION\
                     SELECT id_alias FROM artist_aliases\
                     UNION\
