@@ -64,7 +64,7 @@ class ViewCollection(_BaseViewCreator):
         name_view = 'vw_artist_collection_releases'
         self.drop(name_view=name_view)
         sql_definition = "SELECT DISTINCT release_artists.id_artist, collection_items.id_release,\
-                name_artist, release.title AS name_release, release.url_cover\
+                name_artist, release.title AS name_release, release.url_cover, release.url_thumbnail\
             FROM collection_items\
             INNER JOIN release_artists\
                 ON release_artists.id_release = collection_items.id_release\

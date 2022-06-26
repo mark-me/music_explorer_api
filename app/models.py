@@ -20,6 +20,7 @@ class CollectionRelease(_database.Base):
     name_artist = _sql.Column(_sql.String)
     name_release = _sql.Column(_sql.String)
     url_cover = _sql.Column(_sql.String)
+    url_thumbnail = _sql.Column(_sql.String)
 
 
 class ReleaseVideo(_database.Base):

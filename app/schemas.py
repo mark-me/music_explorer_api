@@ -16,6 +16,7 @@ class CollectionRelease(_pydantic.BaseModel):
     name_artist: str
     name_release: str
     url_cover: str
+    url_thumbnail: str
 
 
 class ReleaseVideo(_pydantic.BaseModel):
