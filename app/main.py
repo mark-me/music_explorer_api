@@ -5,7 +5,7 @@ import uvicorn
 import fastapi as _fastapi
 from fastapi.middleware.cors import CORSMiddleware
 import sqlalchemy.orm as _orm
-import services as _services, schemas as _schemas
+import services as _services
 
 app = _fastapi.FastAPI()
 
@@ -18,7 +18,6 @@ app.add_middleware(
 )
 
 _services.create_database()
-
 
 @app.post("/collection_artists/")
 def read_collection_artists(

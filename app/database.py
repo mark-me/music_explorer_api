@@ -15,8 +15,8 @@ Base = _declarative.declarative_base()
 
 
 class _BaseViewCreator:
-    def __init__(self, db_file: str) -> None:
-        self.__db_file = db_file
+    def __init__(self) -> None:
+        self.__db_file = DATABASE_URL
     
     def create(self, name_view:str, sql_definition: str) -> None:
         db_con = sqlite3.connect(self.__db_file)
@@ -34,8 +34,8 @@ class _BaseViewCreator:
         db_con.close()
 
 class ViewCollection(_BaseViewCreator):
-    def __init__(self, db_file: str) -> None:
-        super().__init__(db_file=db_file)
+    def __init__(self) -> None:
+        super().__init__()
     
     def artists_in_collection(self) -> None:
         name_view = 'vw_artists_qty_in_collection'
