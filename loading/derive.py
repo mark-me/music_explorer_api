@@ -1,10 +1,10 @@
-from cmath import isnan
 import datetime as dt
 import numpy as np
 import pandas as pd
+from cmath import isnan
+from tqdm import tqdm
 import igraph as igraph
 import discogs_client
-from tqdm import tqdm
 
 import db_writer as _db_writer
 
@@ -129,7 +129,6 @@ class Artists():
             pass
         return df_members
 
-
     def urls(self, artist: discogs_client.Artist) -> pd.DataFrame:
         lst_urls = []
         df_urls = pd.DataFrame()
@@ -182,7 +181,6 @@ class MasterRelease():
             db_writer.tracks(df_tracks=df_tracks)
             db_writer.track_artist(df_track_artists=df_track_artists)
             db_writer.videos(df_videos=df_videos)
-            
             
     def master(self) -> pd.DataFrame:
         pass
