@@ -4,7 +4,7 @@ import extract as _extract
 
 
 def main():
-    with open(r'loading/config.yml') as file:
+    with open(r'config.yml') as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
     consumer_key = config['app_key']
     consumer_secret = config['app_secret']

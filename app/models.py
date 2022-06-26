@@ -24,7 +24,7 @@ class CollectionRelease(_database.Base):
 
 
 class ReleaseVideo(_database.Base):
-    __tablename__ = "collection_videos"
+    __tablename__ = "release_videos"
 
     id_release = _sql.Column(_sql.Integer, primary_key=True)
     title = _sql.Column(_sql.String)

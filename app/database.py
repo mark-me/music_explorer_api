@@ -1,9 +1,14 @@
+import yaml
 import sqlalchemy as _sql
 import sqlalchemy.ext.declarative as _declarative
 import sqlalchemy.orm as _orm
 import sqlite3
 
-DATABASE_URL = "sqlite:////data/music_collection.db"
+with open(r'config.yml') as file:
+    config = yaml.load(file, Loader=yaml.FullLoader)
+db_file = config['db_file']
+
+DATABASE_URL = "sqlite:///" + db_file
 
 engine = _sql.create_engine(
     DATABASE_URL, connect_args={"check_same_thread": False}
