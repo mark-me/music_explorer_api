@@ -58,7 +58,8 @@ class ViewCollection(_BaseViewCreator):
     def artist_collection_items(self) -> None:
         name_view = 'vw_artist_collection_releases'
         self.drop(name_view=name_view)
-        sql_definition = "SELECT DISTINCT release_artists.id_artist, name_artist, release.title, release.url_cover\
+        sql_definition = "SELECT DISTINCT release_artists.id_artist, collection_items.id_release,\
+                name_artist, release.title AS name_release, release.url_cover\
             FROM collection_items\
             INNER JOIN release_artists\
                 ON release_artists.id_release = collection_items.id_release\
@@ -68,3 +69,12 @@ class ViewCollection(_BaseViewCreator):
                 ON release.id_release = release_artists.id_release"
         self.create(name_view=name_view, sql_definition=sql_definition)
 
+
+class Artist(_BaseViewCreator):
+    def __init__(self, db_file: str) -> None:
+        super().__init__(db_file=db_file)
+        
+        
+class Release(_BaseViewCreator):
+    def __init__(self, db_file: str) -> None:
+        super().__init__(db_file=db_file)
