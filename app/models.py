@@ -16,9 +16,9 @@ class CollectionRelease(_database.Base):
     __tablename__ = "vw_artist_collection_releases"
 
     id_artist = _sql.Column(_sql.Integer, primary_key=True)
-    id_release = _sql.Column(_sql.Integer)
+    id_release = _sql.Column(_sql.Integer, primary_key=True)
     name_artist = _sql.Column(_sql.String)
-    name_release = _sql.Column(_sql.String, primary_key=True)
+    name_release = _sql.Column(_sql.String)
     url_cover = _sql.Column(_sql.String)
 
 
