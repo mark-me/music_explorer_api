@@ -4,7 +4,6 @@ import yaml
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-from tqdm.auto import trange
 import discogs_client
 
 import derive as _derive
