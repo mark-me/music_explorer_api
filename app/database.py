@@ -21,10 +21,10 @@ Base = _declarative.declarative_base()
 
 class _BaseViewCreator:
     def __init__(self, db_file: str) -> None:
-        self.__db_file = db_file
+        self.db_file = db_file
     
     def create(self, name_view:str, sql_definition: str) -> None:
-        db_con = sqlite3.connect(self.__db_file)
+        db_con = sqlite3.connect(self.db_file)
         cursor = db_con.cursor()
         sql = "CREATE VIEW " + name_view + " AS " + sql_definition +";"
         cursor.execute(sql)
@@ -32,7 +32,7 @@ class _BaseViewCreator:
         db_con.close()
     
     def drop(self, name_view: str) -> None:
-        db_con = sqlite3.connect(self.__db_file)
+        db_con = sqlite3.connect(self.db_file)
         cursor = db_con.cursor()
         cursor.execute("DROP VIEW IF EXISTS " + name_view)
         db_con.commit()
