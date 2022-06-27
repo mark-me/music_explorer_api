@@ -67,11 +67,6 @@ class Collection(_DBStorage):
 
     def drop_tables(self) -> None:
         self.drop_existing_table(name_table='collection_items')
-        self.drop_existing_table(name_table='collection_artists')
-        self.drop_existing_table(name_table='collection_formats')
-        self.drop_existing_table(name_table='collection_labels')
-        self.drop_existing_table(name_table='collection_genres')
-        self.drop_existing_table(name_table='collection_styles')
 
     def create_views(self) -> None:
         db_con = sqlite3.connect(self.db_file)
