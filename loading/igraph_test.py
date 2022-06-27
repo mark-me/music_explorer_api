@@ -97,5 +97,5 @@ g_cluster_test.delete_vertices(idx)
 eigenvalue = g_cluster_test.eigenvector_centrality(directed=False)
 g_cluster_test.vs['order'] = eigenvalue
 df_vertices = pd.DataFrame({'names': g_cluster_test.vs['name_artist'], 'eigenvalue': eigenvalue})
-g_cluster_test.write_svg('clusters.svg2')
+g_cluster_test.write_svg('clusters2.svg')
 print("Done")
