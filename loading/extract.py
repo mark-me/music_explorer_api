@@ -49,8 +49,8 @@ class Discogs:
 
     def start(self) -> None:
         """Starts user's collection processing"""
-        #self.__collection_value()
-        #self.__collection_items()
+        self.__collection_value()
+        self.__collection_items()
         self.__artists_from_collection()
 
     def __collection_value(self) -> None:
@@ -81,9 +81,60 @@ class Discogs:
             derive.process()
 
  
-class Database:
+class Database(_db_reader._DBStorage):
     def __init__(self, db_file: str) -> None:
-        self.db_file = db_file
+        super().__init__(db_file)
+
+    def create_edges_view(self) -> None:
+        name_view = 'vw_artists_edges'
+        self.drop_view(name_view=name_view)
+        sql_definition = "SELECT id_artist_from,\
+                name_artist_from,\
+                id_artist_to,\
+                name_artist_to,\
+                relation_type,\
+                COUNT(*) as qty\
+            FROM (\
+                SELECT id_member AS id_artist_from,\
+                    name_member AS name_artist_from,\
+                    artist.id_artist as id_artist_to,\
+                    artist.name_artist as name_artist_to,\
+                    'group_member' as relation_type\
+                FROM artist\
+                INNER JOIN artist_members\
+                    ON artist_members.id_artist = artist.id_artist\
+                UNION\
+                    SELECT artist.id_artist as id_artist_from,\
+                        artist.name_artist as name_artist_from,\
+                        id_group AS id_artist_to,\
+                        name_group AS name_artist_to,\
+                        'group_member' as relation_type\
+                    FROM artist\
+                    INNER JOIN artist_groups\
+                        ON artist_groups.id_artist = artist.id_artist\
+                UNION\
+                    SELECT a.id_alias,\
+                        a.name_alias,\
+                        artist.id_artist,\
+                        name_artist,\
+                        'artist_alias'\
+                    FROM artist\
+                    INNER JOIN artist_aliases a\
+                        ON a.id_artist = artist.id_artist\
+                    LEFT JOIN artist_aliases b\
+                        ON a.id_artist = b.id_alias AND\
+                            a.id_alias = b.id_artist\
+                    WHERE a.id_artist > b.id_artist OR\
+                        b.id_artist IS NULL\
+                )\
+            GROUP BY id_artist_from,\
+                name_artist_from,\
+                id_artist_to,\
+                name_artist_to,\
+                relation_type\
+            ORDER BY id_artist_from,\
+                id_artist_to"
+        self.create_view(name_view=name_view, sql_definition=sql_definition)
 
     def start(self) -> None:
         db_reader = _db_reader.Artists(db_file=self.db_file)
