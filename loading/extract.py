@@ -77,6 +77,7 @@ class Discogs:
             for index, row in df_artists_new.iterrows():
                 lst_artists.append(self.client.artist(id=row['id_artist']))
             derive = _derive.Artists(artist=lst_artists, db_file=self.db_file)
+            derive.process_masters = False
             derive.process()
 
  

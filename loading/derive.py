@@ -15,6 +15,7 @@ class Artists():
     def __init__(self, artist: discogs_client.Artist, db_file: str) -> None:
         self.__d_artists = artist
         self.db_file = db_file
+        self.process_masters = True
 
     def process(self) -> None:
         db_writer = _db_writer.Artists(db_file=self.db_file)        
@@ -22,7 +23,7 @@ class Artists():
             exists = db_writer.in_db(id_artist=artist.id)
             if not exists:
                 df_artists = self.artist(artist=artist)
-                df_masters = self.masters(artist=artist)
+                if self.process_masters: df_masters = self.masters(artist=artist)
                 df_images = self.images(artist=artist)
                 df_aliases = self.aliases(artist=artist)
                 df_groups = self.groups(artist=artist)
