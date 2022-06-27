@@ -30,7 +30,7 @@ class Artists():
                 df_members = self.members(artist=artist)
                 df_urls = self.urls(artist=artist)
                 db_writer.artists(df_artists=df_artists)
-                db_writer.masters(df_masters=df_masters)
+                if self.process_masters: db_writer.masters(df_masters=df_masters)
                 db_writer.members(df_members=df_members)
                 db_writer.groups(df_groups=df_groups)
                 db_writer.aliases(df_aliases=df_aliases)
