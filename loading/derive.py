@@ -385,7 +385,6 @@ class CollectionItem():
 
     def process(self) -> None:
         db_writer = _db_writer.Collection(db_file=self.db_file)
-        db_writer.drop_tables()
         df_item = self.__collection_item()
         self.__release.process()
         db_writer.items(df_items=df_item)
