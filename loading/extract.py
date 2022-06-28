@@ -61,6 +61,8 @@ class Discogs:
     def __collection_items(self) -> None:
         """Process the user's collection items"""
         me = self.client.identity()
+        db_writer = _db_writer.Collection(db_file=self.db_file)
+        db_writer.drop_tables()
         qty_items = me.collection_folders[0].count
         for item in tqdm(me.collection_folders[0].releases, total=qty_items, desc="Collection items"):
             derive = _derive.CollectionItem(item=item, db_file=self.db_file)
