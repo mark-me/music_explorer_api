@@ -104,5 +104,5 @@ g_cluster_test.vs['eigenvalue'] = eigenvalue
 g_cluster_test.vs.select(lambda vertex: vertex['eigenvalue'] < .8)['label'] = ''
 #g_cluster_test.vs[ids]['label'] = ''
 df_vertices = pd.DataFrame({'names': g_cluster_test.vs['name_artist'], 'eigenvalue': eigenvalue})
-g_cluster_test.write_svg('clusters2.svg')Het g
+g_cluster_test.write_svg('clusters2.svg') 
 print("Done")
