@@ -81,15 +81,70 @@ g_test.write_svg('test.svg')
 
 lst_color = ['#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99','#e31a1c','#fdbf6f','#ff7f00','#cab2d6','#6a3d9a','#ffff99','#b15928']
 g_cluster_test = lst_graphs[3]
-clusters = g_cluster_test.community_edge_betweenness(directed=False)
-test = clusters.as_clustering()
+# Prevent invalid plot names
 names = g_cluster_test.vs['name_artist']
 names2 = [i.replace("&", "and") for i in names]
 g_cluster_test.vs['label'] = names2
-print(dict(collections.Counter(test.membership)))
-print(len(names))
+
+# 1st Iteration
+# Cluster the graph
+clusters = g_cluster_test.community_edge_betweenness(directed=False)
+# Cut the cluster hierarchy to determine membership
+iter_cluster = 0
+membership = clusters.as_clustering(n=10)
+communities = set(membership.membership)
+lst_sub_graphs = []
+lst_data = []
+#for iter_hierarchy in range(1, 10):
+for iter_community in communities:
+    # Make a subgraph of the community
+    array = np.array(membership.membership)
+    bool_array = array != iter_community
+    idx = np.where(bool_array)[0].tolist()
+    graph_sub = g_cluster_test.copy()
+    graph_sub.delete_vertices(idx)
+    lst_sub_graphs.append(graph_sub.copy())
+    
+    # Calculate the eigenvalue of the community members within the community
+    eigenvalue = graph_sub.eigenvector_centrality(directed=False)
+    # Subgraph clustering
+    sub_clusters = graph_sub.community_edge_betweenness(directed=False)
+    sub_membership = sub_clusters.as_clustering()
+    
+    # Collect data and store to DB
+    df_cluster = pd.DataFrame({'id_artist': graph_sub.vs['name'],
+                                'name_artist': graph_sub.vs['name_artist'], 
+                                'eigenvalue': eigenvalue,
+                                'sub_community': sub_membership.membership})
+    df_cluster['community'] = iter_community
+    df_cluster['hierarchy'] = iter_cluster
+    lst_data.append(df_cluster)
+df_data = pd.concat(lst_data, axis=0, ignore_index=True)          
+        
+# Write data
+g_cluster_test.write_svg('clusters_' + str(iter_cluster) + '.svg')
+""" Pseudo code for loop
+* Create a list with decomposed graphs
+* For each sub graph until none in the list:
+    * Determine communities
+    * If the number of communities suggested is larger than 15, limit to 15
+    * If the number of communities is 5 more or less than the total number of vertices in the graph:
+        * Set the community number of each vertex with a sequential number
+        * Set the eigenvalue of each of the vertices to 1
+    * Else
+        * Set the community numbers of the vertices
+        * Determine eigenvalue of vertices
+        * Create subgraph for each community and add to list
+    * Remove subgraph
+"""
+
+
+print("Number of artists per cluster : ")
+for key, value in  dict(collections.Counter(test.membership)).items():
+    print(key, ' : ', value)
 #g_cluster_test.vs['color'] = [lst_color[i] for i in test.membership]
-g_cluster_test.write_svg('clusters.svg')
+
+
 array = np.array(test.membership)
 bool_array = array != 0
 idx = np.where(bool_array)[0].tolist()
