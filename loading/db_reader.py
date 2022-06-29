@@ -70,11 +70,14 @@ class Artists(_DBStorage):
     def __init__(self, db_file) -> None:
         super().__init__(db_file)  
 
-    def vertices(self) -> pd.DataFrame:
+    def artists(self) -> pd.DataFrame:
         db_con = sqlite3.connect(self.db_file)
         df_vertices = pd.read_sql_query("SELECT * FROM artist", con=db_con)
         db_con.close() 
         return df_vertices
+
+    def vertices(self) -> pd.DataFrame:
+        return self.artists()
     
     def edges(self) -> pd.DataFrame:
         db_con = sqlite3.connect(self.db_file)

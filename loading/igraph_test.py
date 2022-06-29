@@ -4,6 +4,7 @@ import yaml
 import numpy as np
 import pandas as pd
 import igraph as ig
+from colour import Color
 import collections
 
 import derive as _derive
@@ -95,7 +96,13 @@ idx = np.where(bool_array)[0].tolist()
 g_cluster_test.delete_vertices(idx)
 
 eigenvalue = g_cluster_test.eigenvector_centrality(directed=False)
-g_cluster_test.vs['order'] = eigenvalue
+color_yellow = Color("yellow")
+color_range = list(color_yellow.range_to(Color("red"),11))
+bin_eigenvalue = [round(i * 10) for i in eigenvalue]
+g_cluster_test.vs['color'] = [color_range[i] for i in bin_eigenvalue]
+g_cluster_test.vs['eigenvalue'] = eigenvalue
+g_cluster_test.vs.select(lambda vertex: vertex['eigenvalue'] < .8)['label'] = ''
+#g_cluster_test.vs[ids]['label'] = ''
 df_vertices = pd.DataFrame({'names': g_cluster_test.vs['name_artist'], 'eigenvalue': eigenvalue})
-g_cluster_test.write_svg('clusters2.svg')
+g_cluster_test.write_svg('clusters2.svg')Het g
 print("Done")

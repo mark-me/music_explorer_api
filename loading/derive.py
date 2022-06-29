@@ -12,8 +12,8 @@ import db_writer as _db_writer
 class Artists():
     """A class that processes artist related data
     """
-    def __init__(self, artist: discogs_client.Artist, db_file: str) -> None:
-        self.__d_artists = artist
+    def __init__(self, artists: discogs_client.Artist, db_file: str) -> None:
+        self.__d_artists = artists
         self.db_file = db_file
         self.process_masters = True
 
@@ -37,6 +37,12 @@ class Artists():
                 db_writer.images(df_images=df_images)
                 db_writer.urls(df_urls=df_urls)
 
+    def process_masters(self) -> None:
+        db_writer = _db_writer.Artists(db_file=self.db_file)        
+        for artist in tqdm(self.__d_artists, total=len(self.__d_artists), desc="Artists"):    
+            df_masters = self.masters(artist=artist)
+            db_writer.masters(df_masters=df_masters)
+
     def artist(self, artist: discogs_client.Artist) -> pd.DataFrame:
         df_artist = pd.DataFrame()
         try:
@@ -47,14 +53,14 @@ class Artists():
         return df_artist
 
     def masters(self, artist: discogs_client.Artist) -> pd.DataFrame:
-        lst_masters = []
+        masters = []
         df_masters = pd.DataFrame()
         try:
             qty_pages = artist.releases.pages
             for page_no in tqdm(range(1, qty_pages), total=qty_pages-1, desc=artist.name + " - Masters"):
                 page = artist.releases.page(page_no)
-                lst_masters = lst_masters + [master.data for master in page]
-            df_masters = pd.DataFrame(lst_masters)
+                masters = masters + [master.data for master in page]
+            df_masters = pd.DataFrame(masters)
             if not df_masters.empty:
                 df_masters['id_artist'] = artist.id
                 df_masters = df_masters[['id_artist', 'id', 'title', 'type', 'main_release', 'artist', 'role', 'year', 'thumb']]
@@ -66,13 +72,13 @@ class Artists():
 
     def images(self, artist: discogs_client.Artist) -> pd.DataFrame:
         try:
-            lst_images = []
+            images = []
             df_images = pd.DataFrame()
             for image in artist.images:
                 df_image = pd.DataFrame([image])
-                lst_images.append(df_image)
-            if len(lst_images) > 0:
-                df_images = pd.concat(lst_images, axis=0, ignore_index=True)
+                images.append(df_image)
+            if len(images) > 0:
+                df_images = pd.concat(images, axis=0, ignore_index=True)
                 df_images['id_artist'] = artist.id
                 df_images = df_images[['id_artist', 'type', 'uri', 'uri150', 'width', 'height']]
                 df_images = df_images.rename(columns={'uri': 'url_image', 'uri150': 'url_image_150',\
@@ -82,14 +88,14 @@ class Artists():
         return df_images        
 
     def groups(self, artist: discogs_client.Artist) -> pd.DataFrame:
-        lst_groups = []
+        groups = []
         df_groups = pd.DataFrame()
         try:
             for group in artist.groups:
                 df_group = pd.DataFrame([group.data])
-                lst_groups.append(df_group)
-            if len(lst_groups) > 0:
-                df_groups = pd.concat(lst_groups, axis=0, ignore_index=True)
+                groups.append(df_group)
+            if len(groups) > 0:
+                df_groups = pd.concat(groups, axis=0, ignore_index=True)
                 df_groups['id_artist'] = artist.id
                 df_groups = df_groups.rename(columns={'id': 'id_group', 'name': 'name_group', 'resource_url': 'api_group',\
                     'active': 'is_active', 'thumbnail_url': 'url_thumbnail'})
@@ -98,14 +104,14 @@ class Artists():
         return df_groups
 
     def aliases(self, artist: discogs_client.Artist) -> pd.DataFrame:
-        lst_aliases = []
+        aliases = []
         df_aliases = pd.DataFrame()
         try:
             for alias in artist.aliases:
                 df_alias = pd.DataFrame([alias.data])
-                lst_aliases.append(df_alias)
-            if len(lst_aliases) > 0:
-                df_aliases = pd.concat(lst_aliases, axis=0, ignore_index=True)
+                aliases.append(df_alias)
+            if len(aliases) > 0:
+                df_aliases = pd.concat(aliases, axis=0, ignore_index=True)
                 df_aliases['id_artist'] = artist.id
                 df_aliases = df_aliases.rename(columns={'id': 'id_alias', 'name': 'name_alias',\
                     'resource_url': 'api_alias', 'thumbnail_url': 'url_thumbnail'})
@@ -114,14 +120,14 @@ class Artists():
         return df_aliases
 
     def members(self, artist: discogs_client.Artist) -> pd.DataFrame:
-        lst_members = []
+        members = []
         df_members = pd.DataFrame()
         try:
             for member in artist.members:
                 df_member = pd.DataFrame([member.data])
-                lst_members.append(df_member)
-            if len(lst_members) > 0:
-                df_members = pd.concat(lst_members, axis=0, ignore_index=True)
+                members.append(df_member)
+            if len(members) > 0:
+                df_members = pd.concat(members, axis=0, ignore_index=True)
                 df_members['id_artist'] = artist.id
                 df_members = df_members.rename(columns={'id': 'id_member', 'name': 'name_member', 'resource_url': 'api_member',\
                     'active': 'is_active', 'height': 'height_image', 'thumbnail_url': 'url_thumbnail'})
@@ -131,14 +137,14 @@ class Artists():
         return df_members
 
     def urls(self, artist: discogs_client.Artist) -> pd.DataFrame:
-        lst_urls = []
+        urls = []
         df_urls = pd.DataFrame()
         try:
             for url in artist.urls:
                 df_url = pd.DataFrame([url])
-                lst_urls.append(df_url)
-            if len(lst_urls) > 0:
-                df_urls = pd.concat(lst_urls, axis=0, ignore_index=True)
+                urls.append(df_url)
+            if len(urls) > 0:
+                df_urls = pd.concat(urls, axis=0, ignore_index=True)
                 df_urls['id_artist'] = artist.id
                 df_urls = df_urls.set_axis(['url_artist', 'id_artist'], axis=1)
         except:
@@ -195,53 +201,53 @@ class MasterRelease():
         return df_stats
 
     def styles(self) -> pd.DataFrame:
-        lst_styles = []
+        styles = []
         df_styles = pd.DataFrame()
         if not self.d_release.styles is None:
             for style in self.d_release.styles:
                 df_style = pd.DataFrame([style])
-                lst_styles.append(df_style)
+                styles.append(df_style)
             df_styles = pd.DataFrame()
-            if len(lst_styles) > 0:
-                df_styles = pd.concat(lst_styles, axis=0, ignore_index=True)
+            if len(styles) > 0:
+                df_styles = pd.concat(styles, axis=0, ignore_index=True)
                 df_styles['id_release'] = self.d_release.id
         return df_styles
 
     def genres(self) -> pd.DataFrame:
-        lst_genres = []
+        genres = []
         df_genres = pd.DataFrame()
         for genre in self.d_release.genres:
             df_genre = pd.DataFrame([genre])
-            lst_genres.append(df_genre)
-        if len(lst_genres) > 0:
-            df_genres = pd.concat(lst_genres, axis=0, ignore_index=True)
+            genres.append(df_genre)
+        if len(genres) > 0:
+            df_genres = pd.concat(genres, axis=0, ignore_index=True)
             df_genres['id_release'] = self.d_release.id
             df_genres = df_genres.set_axis(['name_genre', 'id_release'], axis=1)
         return df_genres
 
     def tracks(self) -> pd.DataFrame:
-        lst_tracks = []
+        tracks = []
         df_tracks = pd.DataFrame()
         for track in self.d_release.tracklist:
             dict_track = track.data
-            lst_tracks.append(pd.DataFrame([dict_track]))
-        if len(lst_tracks) > 0:
-            df_tracks = pd.concat(lst_tracks, axis=0, ignore_index=True)
+            tracks.append(pd.DataFrame([dict_track]))
+        if len(tracks) > 0:
+            df_tracks = pd.concat(tracks, axis=0, ignore_index=True)
             df_tracks = df_tracks[['position', 'title', 'duration']]
             df_tracks['id_release'] = self.d_release.id
         return df_tracks
 
     def track_artists(self) -> pd.DataFrame:
-        lst_artist = []
+        artist = []
         df_artists = pd.DataFrame()
         for track in self.d_release.tracklist:
             if 'extraartists' in track.data:
                 dict_artist = track.data['extraartists']
                 df_artist = pd.DataFrame(dict_artist)
                 df_artist['position'] = track.data['position']
-                lst_artist.append(df_artist)
-        if len(lst_artist) > 0:
-            df_artists = pd.concat(lst_artist, axis=0, ignore_index=True)  
+                artist.append(df_artist)
+        if len(artist) > 0:
+            df_artists = pd.concat(artist, axis=0, ignore_index=True)  
             df_artists = df_artists[['name', 'role', 'id', 'resource_url', 'thumbnail_url', 'position']]  
             df_artists = df_artists.rename(columns={'name': 'name_artist', 'id': 'id_artist', 'resource_url': 'api_artist',\
                 'thumbnail_url': 'url_thumbnail'})
@@ -249,13 +255,13 @@ class MasterRelease():
         return df_artists
 
     def videos(self) -> pd.DataFrame:
-        lst_video = []
+        video = []
         df_videos = pd.DataFrame()
         for video in self.d_release.videos:
             dict_video = video.data
-            lst_video.append(pd.DataFrame([dict_video]))
-        if len(lst_video) > 0:
-            df_videos = pd.concat(lst_video, axis=0, ignore_index=True)
+            video.append(pd.DataFrame([dict_video]))
+        if len(video) > 0:
+            df_videos = pd.concat(video, axis=0, ignore_index=True)
             df_videos = df_videos[['uri', 'title', 'duration']]
             df_videos = df_videos.rename(columns={'uri': 'url_video'})
             df_videos['id_release'] = self.d_release.id
@@ -267,7 +273,7 @@ class Release(MasterRelease):
     """
     def __init__(self, release, db_file: str) -> None:
         super().__init__(release, db_file)
-        self.__artists = Artists(artist=release.artists, db_file=db_file)
+        self.__artists = Artists(artists=release.artists, db_file=db_file)
 
     def process(self) -> None:
         db_writer = _db_writer.Release(db_file=self.db_file)
@@ -308,46 +314,46 @@ class Release(MasterRelease):
         return df_release
 
     def release_artists(self) -> pd.DataFrame:
-        lst_artists = []
+        artists = []
         for artist in self.d_release.artists:
-            lst_artists.append({'id_artist': artist.id, 'id_release': self.d_release.id})
-        df_artists = pd.DataFrame(lst_artists)
+            artists.append({'id_artist': artist.id, 'id_release': self.d_release.id})
+        df_artists = pd.DataFrame(artists)
         return df_artists
 
     def labels(self) -> pd.DataFrame:
-        lst_labels = []
+        labels = []
         for label in self.d_release.labels:
             df_label = pd.DataFrame([label.data])
-            lst_labels.append(df_label)
+            labels.append(df_label)
         df_labels = pd.DataFrame()
-        if len(lst_labels) > 0:
-            df_labels = pd.concat(lst_labels, axis=0, ignore_index=True)
+        if len(labels) > 0:
+            df_labels = pd.concat(labels, axis=0, ignore_index=True)
             df_labels['id_release'] = self.d_release.id
             df_labels = df_labels[['id_release', 'id', 'name', 'catno', 'thumbnail_url']]
             df_labels = df_label.rename(columns={'id': 'id_label', 'name': 'name_label', 'thumbnail_url': 'url_thumbnail'})
         return df_labels
 
     def formats(self) -> pd.DataFrame:
-        lst_formats = []
+        formats = []
         for format in self.d_release.formats:
             df_format = pd.DataFrame([format])
-            lst_formats.append(df_format)
+            formats.append(df_format)
         df_formats = pd.DataFrame()
-        if len(lst_formats) > 0:
-            df_formats = pd.concat(lst_formats, axis=0, ignore_index=True)
+        if len(formats) > 0:
+            df_formats = pd.concat(formats, axis=0, ignore_index=True)
             df_formats = df_formats[['name', 'qty']]
             df_formats['id_release'] = self.d_release.id
             df_formats = df_formats.rename(columns={'name': 'name_format', 'qty': 'qty_format'})
         return df_formats
 
     def credits(self) -> pd.DataFrame:
-        lst_artist = []
+        artist = []
         df_artists = pd.DataFrame()
         for artist in self.d_release.credits:
             df_artist = pd.DataFrame([artist.data])
-            lst_artist.append(df_artist)
-        if len(lst_artist) > 0:
-            df_artists = pd.concat(lst_artist, axis=0, ignore_index=True)
+            artist.append(df_artist)
+        if len(artist) > 0:
+            df_artists = pd.concat(artist, axis=0, ignore_index=True)
             df_artists = df_artists[['name', 'role', 'id', 'resource_url', 'thumbnail_url']]  
             df_artists = df_artists.rename(columns={'name': 'name_artist', 'id': 'id_artist', 'resource_url': 'api_artist',\
                 'thumbnail_url': 'url_thumbnail'})      

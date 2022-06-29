@@ -75,12 +75,22 @@ class Discogs:
         while qty_artists_not_added > 0:
             qty_artists_not_added = db_reader.qty_artists_not_added()
             df_artists_new = db_reader.artists_not_added()
-            lst_artists = []
+            artists = []
             for index, row in df_artists_new.iterrows():
-                lst_artists.append(self.client.artist(id=row['id_artist']))
-            derive = _derive.Artists(artist=lst_artists, db_file=self.db_file)
+                artists.append(self.client.artist(id=row['id_artist']))
+            derive = _derive.Artists(artists=artists, db_file=self.db_file)
             derive.process_masters = False
             derive.process()
+            
+    def __masters_from_artists(self) -> None:
+        """Process master release information from artists"""
+        db_reader = _db_reader.Artists(db_file=self.db_file)
+        df_artists = db_reader.artists()
+        artists = []
+        for index, row in tqdm(df_artists.iterrows(), total=df_artists.shape[0]):
+            artists.append(self.client.artist(id=row['id_artist']))
+        derive = _derive.Artists(artists=artists)
+        derive.process_masters()
 
  
 class Database(_db_reader._DBStorage):
