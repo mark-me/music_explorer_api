@@ -3,6 +3,8 @@ CREATE TABLE "artist" (
 	"id_artist"	INT,
 	"role"	TEXT,
 	"qty_collection_items"	INTEGER,
+	"is_group"	INTEGER,
+	"url_thumbnail"	TEXT,
 	PRIMARY KEY("id_artist")
 );
 
