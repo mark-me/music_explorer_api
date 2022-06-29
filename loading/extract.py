@@ -158,3 +158,16 @@ class Database(_db_reader._DBStorage):
             db_writer.cluster_hierarchy(df_hierarchy=derive.cluster_betweenness())
             db_writer.centrality(df_centrality=derive.centrality())
             print("Ooohhh.... There is something to cluster")
+
+    def artist_is_group(self) -> None:
+        sql = "UPDATE artist SET is_group = (SELECT 1 FROM artist_members WHERE id_artist = artist.id_artist)"
+        sql = "UPDATE artist\
+                SET url_thumbnail = (\
+                    SELECT url_thumbnail FROM (\
+                        SELECT id_alias AS id_artist, url_thumbnail FROM artist_aliases\
+                        UNION\
+                    SELECT id_member, url_thumbnail FROM artist_members\
+                        UNION\
+                        SELECT id_group, url_thumbnail FROM artist_groups\
+                    ) WHERE id_artist = artist.id_artist )"
+        
