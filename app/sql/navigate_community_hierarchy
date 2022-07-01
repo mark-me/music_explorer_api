@@ -1,0 +1,29 @@
+SELECT a.*, b.id_community, b.eigenvalue
+FROM artist_community_hierarchy a
+INNER JOIN artist_community_hierarchy b
+	ON b.id_artist = a.id_artist
+WHERE a.id_hierarchy = 1 AND a.id_community = 2 AND
+	  b.id_hierarchy = 2
+ORDER BY b.id_community, b.eigenvalue DESC
+
+
+SELECT a.id_hierarchy, a.id_community, b.id_community, COUNT(*) as qty_artists
+FROM artist_community_hierarchy a
+INNER JOIN artist_community_hierarchy b
+	ON b.id_artist = a.id_artist
+WHERE a.id_hierarchy + 1 = b.id_hierarchy 
+GROUP BY a.id_hierarchy, a.id_community, b.id_community
+ORDER BY a.id_hierarchy, a.id_community, b.id_community
+
+
+SELECT a.id_hierarchy || '_' || a.id_community AS id_from, 
+    b.id_hierarchy || '_' || b.id_community AS id_to, 
+    COUNT(*) as qty_artists
+FROM artist_community_hierarchy a
+INNER JOIN artist_community_hierarchy b
+	ON b.id_artist = a.id_artist
+WHERE a.id_hierarchy + 1 = b.id_hierarchy 
+GROUP BY a.id_hierarchy || '_' || a.id_community , 
+    b.id_hierarchy || '_' || b.id_community
+ORDER BY a.id_hierarchy || '_' || a.id_community , 
+    b.id_hierarchy || '_' || b.id_community
