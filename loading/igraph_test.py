@@ -55,21 +55,74 @@ class Database(_db_reader._DBStorage):
                 id_artist_to,\
                 relation_type"
         self.create_view(name_view=name_view, sql_definition=sql_definition)
-        
+
+# Create overall graph        
 db = Database(db_file=db_file)
 artists = _db_reader.Artists(db_file=db_file)
 df_edges = artists.edges()
 df_vertices = artists.vertices()[['id_artist', 'name_artist']]
-g = ig.Graph.DataFrame(edges=df_edges, directed=False, vertices=df_vertices)
-#ebs = g.edge_betweenness()
-#max_eb = max(ebs)
+graph_all = ig.Graph.DataFrame(edges=df_edges, directed=False, vertices=df_vertices)
 
-lst_graphs = g.decompose()
+# Decompose graph
+lst_graphs = graph_all.decompose()
 print(len(lst_graphs))
 idx = 0
 for graph in lst_graphs:
     print([str(idx) + " - "] + graph.vs['name_artist'])
     idx = idx + 1
+
+""" Pseudo code for loop
+* Create a list with decomposed graphs
+* For each sub graph until none in the list:
+    * Determine communities
+    * If the number of communities suggested is larger than 15, limit to 15
+    * If the number of communities is 5 more or less than the total number of vertices in the graph:
+        * Set the community number of each vertex with a sequential number
+        * Set the eigenvalue of each of the vertices to 1
+    * Else
+        * Set the community numbers of the vertices
+        * Determine eigenvalue of vertices
+        * Create subgraph for each community and add to list
+    * Remove subgraph
+"""
+
+def plot_graph(graph: ig.Graph) -> None:
+    colors = ["#F0A0FF", "#0075DC", "#993F00", "#4C005C", "#191919", "#005C31", "#2BCE48", "#FFCC99", "#808080", "#94FFB5", "#8F7C00",
+            "#9DCC00", "#C20088", "#003380", "#FFA405", "#FFA8BB", "#426600", "#FF0010", "#5EF1F2", "#00998F", "#E0FF66", "#740AFF",
+            "#990000", "#FFFF80", "#FFE100", "#FF5005"]
+
+graph = lst_graphs[3].copy()
+lst_graphs = [graph]
+lst_hierarchy = [0]
+qty_graphs_queued = len(lst_graphs)
+while qty_graphs_queued > 0:
+    graph = lst_graphs.pop(0)
+    hierarchy = lst_hierarchy.pop(0)
+    qty_vertices = len(graph.vs)
+    # Only cluster if the number of vertices is higher than 15
+    if qty_vertices > 15:
+        cluster_result = graph.community_edge_betweenness(directed=False)
+        qty_clusters = 15 if cluster_result.optimal_count > 15 else cluster_result.optimal_count
+        community_membership = cluster_result.as_clustering(n=qty_clusters).membership
+    else:
+        community_membership = range(0, qty_vertices)
+    print("Total graph # vertices: " + str(len(graph.vs))) # TODO: Remove
+    qty_vertices_sub = 0  # TODO: Remove
+    communities = set(community_membership)
+    for community in communities:
+        idx_not_in_community = np.where(np.array(community_membership) != community)[0].tolist() # Determine vertices not in community
+        graph_sub = graph.copy()
+        graph_sub.delete_vertices(idx_not_in_community)
+        print("Community " + str(community) + " has " + str(len(graph_sub.vs)) + " vertices")  # TODO: Remove
+        qty_vertices_sub = qty_vertices_sub + len(graph_sub.vs)  # TODO: Remove
+        lst_graphs.append(graph_sub.copy())
+        lst_hierarchy.append(hierarchy + 1)
+    print("Vertices processed: " + str(qty_vertices_sub)) # TODO: Remove
+    qty_graphs_queued = len(lst_graphs)
+
+print("Done")
+
+
 """    
 g_test = lst_graphs[6]
 g_test.vs['id_artist'] = g_test.vs['name']
@@ -123,20 +176,7 @@ df_data = pd.concat(lst_data, axis=0, ignore_index=True)
         
 # Write data
 g_cluster_test.write_svg('clusters_' + str(iter_cluster) + '.svg')
-""" Pseudo code for loop
-* Create a list with decomposed graphs
-* For each sub graph until none in the list:
-    * Determine communities
-    * If the number of communities suggested is larger than 15, limit to 15
-    * If the number of communities is 5 more or less than the total number of vertices in the graph:
-        * Set the community number of each vertex with a sequential number
-        * Set the eigenvalue of each of the vertices to 1
-    * Else
-        * Set the community numbers of the vertices
-        * Determine eigenvalue of vertices
-        * Create subgraph for each community and add to list
-    * Remove subgraph
-"""
+
 
 
 print("Number of artists per cluster : ")
