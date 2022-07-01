@@ -93,10 +93,10 @@ def plot_graph(graph: ig.Graph) -> None:
             "#990000", "#FFFF80", "#FFE100", "#FF5005"]
     graph.write_svg("hierarchy_" + ".svg")
 
-graph = lst_graphs[3].copy()
-lst_graphs = [graph]
-lst_hierarchy = [0]
-qty_graphs_queued = len(lst_graphs)
+graph = lst_graphs[3].copy() # Start point for tree probing
+lst_graphs = [graph]         #
+lst_hierarchy = [0]          # Keeping track of where we are in the community tree
+qty_graphs_queued = len(lst_graphs) # Number of graphs in the community tree
 lst_cluster_data = []
 while qty_graphs_queued > 0:
     graph = lst_graphs.pop(0)
@@ -108,7 +108,7 @@ while qty_graphs_queued > 0:
         cluster_result = graph.community_edge_betweenness(directed=False)
         # Setting maximum and minimum of number of clusters
         qty_clusters = 15 if cluster_result.optimal_count > 15 else cluster_result.optimal_count
-        qty_clusters = qty_clusters if qty_clusters > 3 else 3
+        qty_clusters = qty_clusters if qty_clusters > 4 else 4
         community_membership = cluster_result.as_clustering(n=qty_clusters).membership
         qty_vertices_sub = 0  # TODO: Remove
         communities = set(community_membership)
@@ -138,8 +138,10 @@ while qty_graphs_queued > 0:
     qty_graphs_queued = len(lst_graphs)
     print("Graphs in queue: " + str(qty_graphs_queued))  # TODO: Remove
 
-df_data = pd.concat(lst_cluster_data, axis=0, ignore_index=True)  
-print("Out of my depth: done")
+df_data = pd.concat(lst_cluster_data, axis=0, ignore_index=True)
+db_writer = _db_writer.ArtistNetwork(db_file=db_file)
+db_writer.cluster_hierarchy(df_hierarchy=df_data)
+print("Out of my depth: done!")
 
 sys.exit()
 """    
