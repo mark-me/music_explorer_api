@@ -90,6 +90,7 @@ def plot_graph(graph: ig.Graph) -> None:
     colors = ["#F0A0FF", "#0075DC", "#993F00", "#4C005C", "#191919", "#005C31", "#2BCE48", "#FFCC99", "#808080", "#94FFB5", "#8F7C00",
             "#9DCC00", "#C20088", "#003380", "#FFA405", "#FFA8BB", "#426600", "#FF0010", "#5EF1F2", "#00998F", "#E0FF66", "#740AFF",
             "#990000", "#FFFF80", "#FFE100", "#FF5005"]
+    graph.write_svg("hierarchy_" + ".svg")
 
 graph = lst_graphs[3].copy()
 lst_graphs = [graph]
@@ -99,28 +100,34 @@ while qty_graphs_queued > 0:
     graph = lst_graphs.pop(0)
     hierarchy = lst_hierarchy.pop(0)
     qty_vertices = len(graph.vs)
+    print("Tree depth: " + str(hierarchy) + " - Total graph # vertices: " + str(len(graph.vs))) # TODO: Remove
     # Only cluster if the number of vertices is higher than 15
     if qty_vertices > 15:
         cluster_result = graph.community_edge_betweenness(directed=False)
+        # Setting maximum and minimum of number of clusters
         qty_clusters = 15 if cluster_result.optimal_count > 15 else cluster_result.optimal_count
+        qty_clusters = qty_clusters if qty_clusters > 3 else 3
         community_membership = cluster_result.as_clustering(n=qty_clusters).membership
+        qty_vertices_sub = 0  # TODO: Remove
+        communities = set(community_membership)
+        for community in communities:
+            idx_not_in_community = np.where(np.array(community_membership) != community)[0].tolist() # Determine vertices not in community
+            graph_sub = graph.copy()
+            graph_sub.delete_vertices(idx_not_in_community)
+            print("Community " + str(community) + " has " + str(len(graph_sub.vs)) + " vertices")  # TODO: Remove
+            qty_vertices_sub = qty_vertices_sub + len(graph_sub.vs)  # TODO: Remove
+            lst_graphs.append(graph_sub.copy())
+            lst_hierarchy.append(hierarchy + 1)
+            # TODO: Calculate eigenvalue per sub_graph, but include in graph results
+        print("Vertices processed: " + str(qty_vertices_sub)) # TODO: Remove
     else:
         community_membership = range(0, qty_vertices)
-    print("Total graph # vertices: " + str(len(graph.vs))) # TODO: Remove
-    qty_vertices_sub = 0  # TODO: Remove
-    communities = set(community_membership)
-    for community in communities:
-        idx_not_in_community = np.where(np.array(community_membership) != community)[0].tolist() # Determine vertices not in community
-        graph_sub = graph.copy()
-        graph_sub.delete_vertices(idx_not_in_community)
-        print("Community " + str(community) + " has " + str(len(graph_sub.vs)) + " vertices")  # TODO: Remove
-        qty_vertices_sub = qty_vertices_sub + len(graph_sub.vs)  # TODO: Remove
-        lst_graphs.append(graph_sub.copy())
-        lst_hierarchy.append(hierarchy + 1)
-    print("Vertices processed: " + str(qty_vertices_sub)) # TODO: Remove
-    qty_graphs_queued = len(lst_graphs)
+        eigenvalue = [1] * qty_vertices
 
-print("Done")
+    qty_graphs_queued = len(lst_graphs)
+    print("Graphs in queue: " + str(qty_graphs_queued))  # TODO: Remove
+
+print("Out of my depth: done")
 
 
 """    
