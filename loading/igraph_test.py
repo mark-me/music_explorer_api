@@ -1,3 +1,4 @@
+import sys
 import os
 import datetime as dt
 import yaml
@@ -96,6 +97,7 @@ graph = lst_graphs[3].copy()
 lst_graphs = [graph]
 lst_hierarchy = [0]
 qty_graphs_queued = len(lst_graphs)
+lst_cluster_data = []
 while qty_graphs_queued > 0:
     graph = lst_graphs.pop(0)
     hierarchy = lst_hierarchy.pop(0)
@@ -110,6 +112,7 @@ while qty_graphs_queued > 0:
         community_membership = cluster_result.as_clustering(n=qty_clusters).membership
         qty_vertices_sub = 0  # TODO: Remove
         communities = set(community_membership)
+        eigenvalue = []
         for community in communities:
             idx_not_in_community = np.where(np.array(community_membership) != community)[0].tolist() # Determine vertices not in community
             graph_sub = graph.copy()
@@ -119,17 +122,26 @@ while qty_graphs_queued > 0:
             lst_graphs.append(graph_sub.copy())
             lst_hierarchy.append(hierarchy + 1)
             # TODO: Calculate eigenvalue per sub_graph, but include in graph results
+            eigenvalue = eigenvalue + graph_sub.eigenvector_centrality(directed=False)
         print("Vertices processed: " + str(qty_vertices_sub)) # TODO: Remove
     else:
         community_membership = range(0, qty_vertices)
         eigenvalue = [1] * qty_vertices
+        
+    df_cluster_data = pd.DataFrame({'id_artist': graph.vs['name'],
+                                    'name_artist': graph.vs['name_artist'],
+                                    'id_hierarchy': [hierarchy] * qty_vertices,
+                                    'id_community': community_membership,
+                                    'eigenvalue': eigenvalue})
+    lst_cluster_data.append(df_cluster_data)
 
     qty_graphs_queued = len(lst_graphs)
     print("Graphs in queue: " + str(qty_graphs_queued))  # TODO: Remove
 
+df_data = pd.concat(lst_cluster_data, axis=0, ignore_index=True)  
 print("Out of my depth: done")
 
-
+sys.exit()
 """    
 g_test = lst_graphs[6]
 g_test.vs['id_artist'] = g_test.vs['name']
