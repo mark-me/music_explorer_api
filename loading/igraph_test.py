@@ -87,11 +87,12 @@ for graph in lst_graphs:
     * Remove subgraph
 """
 
-def plot_graph(graph: ig.Graph) -> None:
-    colors = ["#F0A0FF", "#0075DC", "#993F00", "#4C005C", "#191919", "#005C31", "#2BCE48", "#FFCC99", "#808080", "#94FFB5", "#8F7C00",
-            "#9DCC00", "#C20088", "#003380", "#FFA405", "#FFA8BB", "#426600", "#FF0010", "#5EF1F2", "#00998F", "#E0FF66", "#740AFF",
-            "#990000", "#FFFF80", "#FFE100", "#FF5005"]
-    graph.write_svg("hierarchy_" + ".svg")
+def plot_graph(graph: ig.Graph, filename: str) -> None:
+    colors = ['#F0A0FF', '#0075DC', '#993F00', '#4C005C', '#191919', '#005C31', '#2BCE48', '#FFCC99', '#808080', '#94FFB5', '#8F7C00',
+            '#9DCC00', '#C20088', '#003380', '#FFA405', '#FFA8BB', '#426600', '#FF0010', '#5EF1F2', '#00998F', '#E0FF66', '#740AFF',
+            '#990000', '#FFFF80', '#FFE100', '#FF5005']
+    graph.vs['color']
+    graph.write_svg(filename)
 
 graph = lst_graphs[3].copy() # Start point for tree probing
 lst_graphs = [graph]         #
@@ -127,6 +128,13 @@ while qty_graphs_queued > 0:
     else:
         community_membership = range(0, qty_vertices)
         eigenvalue = [1] * qty_vertices
+        
+    # TODO: Remove
+    graph.vs['id_hierarchy'] = [hierarchy] * qty_vertices
+    graph.vs['id_community'] = community_membership
+    graph.vs['eigenvalue'] = eigenvalue
+    plot_graph(graph=graph, filename="hierarchy_" + str(hierarchy) + ".svg") 
+    # TODO: End remove
         
     df_cluster_data = pd.DataFrame({'id_artist': graph.vs['name'],
                                     'name_artist': graph.vs['name_artist'],
