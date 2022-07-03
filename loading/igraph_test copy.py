@@ -1,6 +1,7 @@
 import sys
-import os
+#import os
 import datetime as dt
+import time
 import yaml
 import numpy as np
 import pandas as pd
@@ -69,7 +70,7 @@ lst_graphs = graph_all.decompose()
 print(len(lst_graphs))
 idx = 0
 for graph in lst_graphs:
-    print([str(idx) + " - "] + graph.vs['name_artist'])
+    print([str(idx) + " - " + str(len(graph.vs))]) #  + graph.vs['name_artist']
     idx = idx + 1
 
 """ Pseudo code for loop
@@ -94,69 +95,68 @@ def plot_graph(graph: ig.Graph, filename: str) -> None:
     graph.vs['color']
     graph.write_svg(filename)
 
-graph = lst_graphs[3].copy()            # Start point for tree probing
-id_graph = 1
-graph.vs['graph_from'] = 0              # Relating one graph to another
-graph.vs['graph_to'] = id_graph 
-lst_graphs = [graph]                    # Queue for processing graphs
-lst_hierarchy = [0]                     # Keeping track of where we are in the community tree
-qty_graphs_queued = len(lst_graphs)     # Number of graphs in the community tree
+graph = lst_graphs[5].copy()            # Start point for tree probing
+graph.vs['id_community_from'] = [0] * len(graph.vs) 
+# Queue for processing graphs, keeping track level in community tree and relationships between branches
+lst_processing_queue = [{'graph': graph, 'tree_level': 0}]
+
+# For each sub graph until none in the list
+qty_graphs_queued = len(lst_processing_queue)     # Number of graphs in the community tree
 lst_cluster_data = []                   # Data-frames with data for a processed graph
+df_cluster_relations = []               # TODO: Remove
+community_last = 0
 while qty_graphs_queued > 0:
-    graph = lst_graphs.pop(0)
-    hierarchy = lst_hierarchy.pop(0)
+    dict_queue = lst_processing_queue.pop(0)
+    graph = dict_queue.get('graph')
+    tree_level = dict_queue.get('tree_level')
+    
     qty_vertices = len(graph.vs)
-    print("Tree depth: " + str(hierarchy) + " - Total graph # vertices: " + str(len(graph.vs))) # TODO: Remove
+    print("Tree depth: " + str(tree_level) + " - Total graph # vertices: " + str(len(graph.vs))) # TODO: Remove
     # Only cluster if the number of vertices is higher than 15
     if qty_vertices > 15:
+        # Cluster
+        tic = time.perf_counter()
         cluster_result = graph.community_edge_betweenness(directed=False)
         # Setting maximum and minimum of number of clusters
         qty_clusters = 15 if cluster_result.optimal_count > 15 else cluster_result.optimal_count
         qty_clusters = qty_clusters if qty_clusters > 4 else 4
         # Determine clusters
         community_membership = cluster_result.as_clustering(n=qty_clusters).membership
-        qty_vertices_sub = 0  # TODO: Remove
         
+        qty_vertices_sub = 0  # TODO: Remove
         communities = set(community_membership)
         eigenvalue = []
         for community in communities:
             idx_not_in_community = np.where(np.array(community_membership) != community)[0].tolist() # Determine vertices not in community
             graph_sub = graph.copy()
             graph_sub.delete_vertices(idx_not_in_community)
-            id_graph = id_graph + 1
-            graph_sub.vs['graph_from'] = graph_sub.vs['graph_to']
-            graph_sub.vs['graph_to'] = id_graph
+            graph_sub.vs['id_community_from'] = [community] * len(graph_sub.vs)
+
             print("Community " + str(community) + " has " + str(len(graph_sub.vs)) + " vertices")  # TODO: Remove
             qty_vertices_sub = qty_vertices_sub + len(graph_sub.vs)  # TODO: Remove
-            lst_graphs.append(graph_sub.copy())
-            lst_hierarchy.append(hierarchy + 1)
+            lst_processing_queue.append({'graph': graph_sub.copy(), 
+                                         'tree_level': tree_level + 1})
+            
             # TODO: Calculate eigenvalue per sub_graph, but include in graph results
             eigenvalue = eigenvalue + graph_sub.eigenvector_centrality(directed=False)
         print("Vertices processed: " + str(qty_vertices_sub)) # TODO: Remove
     else:
-        id_graph = id_graph + 1
-        graph.vs['graph_from'] = graph.vs['graph_to']
-        graph.vs['graph_to'] = id_graph
         community_membership = range(0, qty_vertices)
         eigenvalue = [1] * qty_vertices
         
-    # TODO: Remove
-    # graph.vs['id_hierarchy'] = [hierarchy] * qty_vertices
-    # graph.vs['id_community'] = community_membership
-    # graph.vs['eigenvalue'] = eigenvalue
-    # plot_graph(graph=graph, filename="hierarchy_" + str(hierarchy) + ".svg") 
-    # TODO: End remove
+    # Make sure community numbers are unique    
+    community_membership = [i + (community_last + 1) for i in community_membership]
+    community_last = max(community_membership)
         
     df_cluster_data = pd.DataFrame({'id_artist': graph.vs['name'],
                                     'name_artist': graph.vs['name_artist'],
-                                    'id_cluster_from': graph.vs['graph_from'],
-                                    'id_cluster': graph.vs['graph_to'],
-                                    'id_hierarchy': [hierarchy] * qty_vertices,
+                                    'id_hierarchy': [tree_level] * qty_vertices,
+                                    'id_community_from': graph.vs['id_community_from'],
                                     'id_community': community_membership,
                                     'eigenvalue': eigenvalue})
     lst_cluster_data.append(df_cluster_data)
 
-    qty_graphs_queued = len(lst_graphs)
+    qty_graphs_queued = len(lst_processing_queue)
     print("Graphs in queue: " + str(qty_graphs_queued))  # TODO: Remove
 
 df_data = pd.concat(lst_cluster_data, axis=0, ignore_index=True)
@@ -169,17 +169,18 @@ df_community_edges = artists.community_hierarchy_edges()
 df_community_vertices = artists.community_hierarchy_vertices()
 
 graph_community = ig.Graph.DataFrame(edges=df_community_edges, 
-                                     directed=False)
+                                     directed=False,
+                                     vertices=df_community_vertices)
 
 colors = ['#F0A0FF', '#0075DC', '#993F00', '#4C005C', '#191919', '#005C31', '#2BCE48', '#FFCC99', '#808080', '#94FFB5', '#8F7C00',
             '#9DCC00', '#C20088', '#003380', '#FFA405', '#FFA8BB', '#426600', '#FF0010', '#5EF1F2', '#00998F', '#E0FF66', '#740AFF',
             '#990000', '#FFFF80', '#FFE100', '#FF5005']
 graph_community.vs['label'] = graph_community.vs['name']
-#graph_community.vs['color'] = [colors[i] for i in graph_community.vs['id_community']]
+graph_community.vs['color'] = [colors[i] for i in graph_community.vs['id_hierarchy']]
 
 is_a_tree = graph_community.is_tree()
 
-graph_community.write_svg('graph_community.svg', layout='reingold_tilford')
+graph_community.write_svg('graph_community.svg', layout='reingold_tilford_circular', width=1600, height=800)
 
 sys.exit()
 """    

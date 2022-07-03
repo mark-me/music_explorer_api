@@ -309,6 +309,7 @@ class ArtistNetwork(_DBStorage):
 
     def cluster_hierarchy(self, df_hierarchy: pd.DataFrame) -> None:
         if df_hierarchy.shape[0] > 0:
+            self.drop_existing_table(name_table='artist_community_hierarchy')
             self.store_append(df=df_hierarchy, name_table='artist_community_hierarchy')
         pass
 
