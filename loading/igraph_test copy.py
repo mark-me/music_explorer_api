@@ -95,7 +95,7 @@ def plot_graph(graph: ig.Graph, filename: str) -> None:
     graph.vs['color']
     graph.write_svg(filename)
 
-graph = lst_graphs[5].copy()            # Start point for tree probing
+graph = lst_graphs[2].copy()            # Start point for tree probing
 graph.vs['id_community_from'] = [0] * len(graph.vs) 
 # Queue for processing graphs, keeping track level in community tree and relationships between branches
 lst_processing_queue = [{'graph': graph, 'tree_level': 0}]
@@ -117,6 +117,8 @@ while qty_graphs_queued > 0:
         # Cluster
         tic = time.perf_counter()
         cluster_result = graph.community_edge_betweenness(directed=False)
+        toc = time.perf_counter()
+        print(f"Finished clustering in {toc - tic:0.4f} seconds")
         # Setting maximum and minimum of number of clusters
         qty_clusters = 15 if cluster_result.optimal_count > 15 else cluster_result.optimal_count
         qty_clusters = qty_clusters if qty_clusters > 4 else 4
