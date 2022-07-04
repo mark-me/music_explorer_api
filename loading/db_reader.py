@@ -72,7 +72,7 @@ class Artists(_DBStorage):
 
     def artists(self) -> pd.DataFrame:
         db_con = sqlite3.connect(self.db_file)
-        df_vertices = pd.read_sql_query("SELECT * FROM artist", con=db_con)
+        df_vertices = pd.read_sql_query("SELECT *, IIF(qty_collection_items > 0, 1, 0) AS in_collection FROM artist", con=db_con)
         db_con.close() 
         return df_vertices
 

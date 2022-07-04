@@ -1,6 +1,7 @@
 import os
 import datetime as dt
 import yaml
+import sqlite3
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
@@ -100,52 +101,37 @@ class Database(_db_reader._DBStorage):
     def create_edges_view(self) -> None:
         name_view = 'vw_artists_edges'
         self.drop_view(name_view=name_view)
-        sql_definition = "SELECT id_artist_from,\
-                name_artist_from,\
-                id_artist_to,\
-                name_artist_to,\
-                relation_type,\
-                COUNT(*) as qty\
-            FROM (\
-                SELECT id_member AS id_artist_from,\
-                    name_member AS name_artist_from,\
-                    artist.id_artist as id_artist_to,\
-                    artist.name_artist as name_artist_to,\
-                    'group_member' as relation_type\
-                FROM artist\
-                INNER JOIN artist_members\
-                    ON artist_members.id_artist = artist.id_artist\
-                UNION\
-                    SELECT artist.id_artist as id_artist_from,\
-                        artist.name_artist as name_artist_from,\
-                        id_group AS id_artist_to,\
-                        name_group AS name_artist_to,\
-                        'group_member' as relation_type\
-                    FROM artist\
-                    INNER JOIN artist_groups\
-                        ON artist_groups.id_artist = artist.id_artist\
-                UNION\
-                    SELECT a.id_alias,\
-                        a.name_alias,\
-                        artist.id_artist,\
-                        name_artist,\
-                        'artist_alias'\
-                    FROM artist\
-                    INNER JOIN artist_aliases a\
-                        ON a.id_artist = artist.id_artist\
-                    LEFT JOIN artist_aliases b\
-                        ON a.id_artist = b.id_alias AND\
-                            a.id_alias = b.id_artist\
-                    WHERE a.id_artist > b.id_artist OR\
-                        b.id_artist IS NULL\
-                )\
-            GROUP BY id_artist_from,\
-                name_artist_from,\
-                id_artist_to,\
-                name_artist_to,\
-                relation_type\
-            ORDER BY id_artist_from,\
-                id_artist_to"
+        sql_definition = "SELECT DISTINCT id_artist_from,\
+                            id_artist_to,\
+                            relation_type\
+                        FROM (\
+                                SELECT id_member AS id_artist_from,\
+                                    id_artist as id_artist_to,\
+                                    'group_member' as relation_type\
+                                FROM artist_members\
+                            UNION\
+                                SELECT id_artist as id_artist_from,\
+                                    id_group AS id_artist_to,\
+                                    'group_member' as relation_type\
+                                FROM artist_groups\
+                            UNION\
+                                SELECT a.id_alias,\
+                                    a.id_artist,\
+                                    'artist_alias'\
+                                FROM artist_aliases a\
+                                LEFT JOIN artist_aliases b\
+                                    ON a.id_artist = b.id_alias AND\
+                                        a.id_alias = b.id_artist\
+                                WHERE a.id_artist > b.id_artist OR\
+                                    b.id_artist IS NULL\
+                            )\
+                        INNER JOIN artist a\
+                            ON a.id_artist = id_artist_from\
+                        INNER JOIN artist b\
+                            ON b.id_artist = id_artist_to\
+                        GROUP BY id_artist_from,\
+                            id_artist_to,\
+                            relation_type"
         self.create_view(name_view=name_view, sql_definition=sql_definition)
 
     def start(self) -> None:
@@ -161,6 +147,12 @@ class Database(_db_reader._DBStorage):
 
     def artist_is_group(self) -> None:
         sql = "UPDATE artist SET is_group = (SELECT 1 FROM artist_members WHERE id_artist = artist.id_artist)"
+        db_con = sqlite3.connect(self.db_file)
+        cursor = db_con.cursor()
+        cursor.execute(sql)
+        db_con.close()
+                
+    def artist_thumbnail(self) -> None:
         sql = "UPDATE artist\
                 SET url_thumbnail = (\
                     SELECT url_thumbnail FROM (\
@@ -170,4 +162,20 @@ class Database(_db_reader._DBStorage):
                         UNION\
                         SELECT id_group, url_thumbnail FROM artist_groups\
                     ) WHERE id_artist = artist.id_artist )"
+        db_con = sqlite3.connect(self.db_file)
+        cursor = db_con.cursor()
+        cursor.execute(sql)
+        db_con.close()
+                    
+    def artist_collection_items(self) -> None:
+        sql = "UPDATE artist\
+            SET qty_collection_items = (SELECT COUNT(*)\
+                        FROM collection_items\
+                        INNER JOIN release_artists\
+                            ON release_artists.id_release = collection_items.id_release \
+                        WHERE  release_artists.id_artist = artist.id_artist)"
+        db_con = sqlite3.connect(self.db_file)
+        cursor = db_con.cursor()
+        cursor.execute(sql)
+        db_con.close()
         
