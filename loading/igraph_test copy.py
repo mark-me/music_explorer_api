@@ -1,5 +1,4 @@
 import sys
-#import os
 import datetime as dt
 import time
 import yaml
@@ -7,7 +6,6 @@ import numpy as np
 import pandas as pd
 import igraph as ig
 from colour import Color
-#import collections
 
 import derive as _derive
 import db_writer as _db_writer
@@ -90,7 +88,7 @@ def cluster_artist_graph(graph: ig.Graph) -> None:
         qty_vertices = len(graph.vs)
         print("Tree depth: " + str(tree_level) + " - Total graph # vertices: " + str(len(graph.vs))) # TODO: Remove
         # Only cluster if the number of vertices is higher than 15
-        if qty_collection_items > 30:
+        if qty_collection_items > 15:
             # Cluster
             tic = time.perf_counter()  # TODO: Remove
             #cluster_hierarchy = graph.community_edge_betweenness(directed=False)
@@ -98,7 +96,7 @@ def cluster_artist_graph(graph: ig.Graph) -> None:
             toc = time.perf_counter()  # TODO: Remove
             print(f"Finished clustering in {toc - tic:0.4f} seconds")  # TODO: Remove
             # Setting maximum and minimum of number of clusters
-            qty_clusters = 10 if cluster_hierarchy.optimal_count > 10 else cluster_hierarchy.optimal_count
+            qty_clusters = 15 if cluster_hierarchy.optimal_count > 15 else cluster_hierarchy.optimal_count
             qty_clusters = qty_clusters if qty_clusters > 2 else 2
             # Determine clusters
             cluster_communities = cluster_hierarchy.as_clustering(n=qty_clusters)
@@ -128,6 +126,7 @@ def cluster_artist_graph(graph: ig.Graph) -> None:
             
         df_cluster_data = pd.DataFrame({'id_artist': graph.vs['name'],
                                         'name_artist': graph.vs['name_artist'],
+                                        'in_collection': graph.vs['in_collection'],
                                         'id_hierarchy': [tree_level] * qty_vertices,
                                         'id_community_from': graph.vs['id_community_from'],
                                         'id_community': community_membership,
@@ -153,7 +152,7 @@ def plot_cluster_tree() -> None:
     colors = ['#F0A0FF', '#0075DC', '#993F00', '#4C005C', '#191919', '#005C31', '#2BCE48', '#FFCC99', '#808080', '#94FFB5', '#8F7C00',
                 '#9DCC00', '#C20088', '#003380', '#FFA405', '#FFA8BB', '#426600', '#FF0010', '#5EF1F2', '#00998F', '#E0FF66', '#740AFF',
                 '#990000', '#FFFF80', '#FFE100', '#FF5005']
-    graph_community.vs['label'] = graph_community.vs['name']
+    graph_community.vs['label'] = graph_community.vs['qty_artists_collection']
     # graph_community.vs['color'] = [colors[i] for i in graph_community.vs['id_hierarchy']]
 
     is_a_tree = graph_community.is_tree()
