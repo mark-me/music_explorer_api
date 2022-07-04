@@ -72,7 +72,7 @@ class Artists(_DBStorage):
 
     def artists(self) -> pd.DataFrame:
         db_con = sqlite3.connect(self.db_file)
-        df_vertices = pd.read_sql_query("SELECT * FROM artist", con=db_con)
+        df_vertices = pd.read_sql_query("SELECT *, IIF(qty_collection_items > 0, 1, 0) AS in_collection FROM artist", con=db_con)
         db_con.close() 
         return df_vertices
 
@@ -93,11 +93,11 @@ class Artists(_DBStorage):
         return df_data    
     
     def community_hierarchy_vertices(self) -> pd.DataFrame:
-        sql = "SELECT 0 as id_community, 0 AS id_hierarchy, COUNT(*) as qty_artists\
+        sql = "SELECT 0 as id_community, 0 AS id_hierarchy, SUM(in_collection) AS qty_artists_collection, COUNT(*) as qty_artists\
                 FROM artist_community_hierarchy\
                 WHERE id_hierarchy = 0\
             UNION\
-                SELECT id_community, id_hierarchy + 1, COUNT(*) as qty_artists\
+                SELECT id_community, id_hierarchy + 1, SUM(in_collection) AS qty_artists_collection, COUNT(*) as qty_artists\
                 FROM artist_community_hierarchy\
                 GROUP BY id_community, id_hierarchy"
         db_con = sqlite3.connect(self.db_file)
