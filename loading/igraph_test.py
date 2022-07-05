@@ -5,7 +5,8 @@ import yaml
 import numpy as np
 import pandas as pd
 import igraph as ig
-from colour import Color
+import networkx as nx
+from pyvis.network import Network
 
 import derive as _derive
 import db_writer as _db_writer
@@ -26,8 +27,7 @@ class Database(_db_reader._DBStorage):
         sql_definition = "SELECT DISTINCT id_artist_from,\
                 id_artist_to,\
                 relation_type\
-            FROM (\
-                    SELECT id_member AS id_artist_from,\
+            FROM (  SELECT id_member AS id_artist_from,\
                         id_artist as id_artist_to,\
                         'group_member' as relation_type\
                     FROM artist_members\
@@ -65,6 +65,7 @@ graph_all = ig.Graph.DataFrame(edges=df_edges, directed=False, vertices=df_verti
 
 # Decompose graph
 lst_graphs = graph_all.decompose()
+# TODO: Remove
 print(len(lst_graphs))
 idx = 0
 for graph in lst_graphs:
@@ -108,11 +109,9 @@ def cluster_artist_graph(graph: ig.Graph) -> None:
             for community in communities:
                 graph_sub = cluster_communities.subgraph(community)
                 graph_sub.vs['id_community_from'] = [community] * len(graph_sub.vs)
-
                 print("Community " + str(community) + " has " + str(len(graph_sub.vs)) + " vertices")  # TODO: Remove
                 qty_vertices_sub = qty_vertices_sub + len(graph_sub.vs)  # TODO: Remove
                 lst_processing_queue.append({'graph': graph_sub.copy(), 'tree_level': tree_level + 1})
-                
                 # Calculate eigenvalue per sub_graph
                 eigenvalue = eigenvalue + graph_sub.eigenvector_centrality(directed=False)
             print("Vertices processed: " + str(qty_vertices_sub)) # TODO: Remove
@@ -123,7 +122,6 @@ def cluster_artist_graph(graph: ig.Graph) -> None:
         # Make sure community numbers are unique    
         community_membership = [i + (community_last + 1) for i in community_membership]
         community_last = max(community_membership)
-            
         df_cluster_data = pd.DataFrame({'id_artist': graph.vs['name'],
                                         'name_artist': graph.vs['name_artist'],
                                         'in_collection': graph.vs['in_collection'],
@@ -144,24 +142,34 @@ def cluster_artist_graph(graph: ig.Graph) -> None:
 def plot_cluster_tree() -> None:
     df_community_edges = artists.community_hierarchy_edges()
     df_community_vertices = artists.community_hierarchy_vertices()
-
     graph_community = ig.Graph.DataFrame(edges=df_community_edges, 
                                         directed=False,
                                         vertices=df_community_vertices)
-
     colors = ['#F0A0FF', '#0075DC', '#993F00', '#4C005C', '#191919', '#005C31', '#2BCE48', '#FFCC99', '#808080', '#94FFB5', '#8F7C00',
                 '#9DCC00', '#C20088', '#003380', '#FFA405', '#FFA8BB', '#426600', '#FF0010', '#5EF1F2', '#00998F', '#E0FF66', '#740AFF',
                 '#990000', '#FFFF80', '#FFE100', '#FF5005']
     graph_community.vs['label'] = graph_community.vs['qty_artists_collection']
     # graph_community.vs['color'] = [colors[i] for i in graph_community.vs['id_hierarchy']]
+    #graph_community.write_svg('graph_community.svg', layout='reingold_tilford_circular', width=1600, height=800)
+    graph_community.write_svg('graph_community.svg', layout='sugiyama', width=1600, height=800)
 
-    is_a_tree = graph_community.is_tree()
+def plot_interactive() -> None:
+    df_community_edges = artists.community_hierarchy_edges()
+    df_community_vertices = artists.community_hierarchy_vertices()
 
-    graph_community.write_svg('graph_community.svg', layout='reingold_tilford_circular', width=1600, height=800)
+    df_community_vertices['size'] = df_community_vertices['qty_artists_collection']
+    network = nx.from_pandas_edgelist(df_community_edges, source = 'id_from', target = 'id_to')
+    node_attr = df_community_vertices.set_index('id_community').to_dict('index')
+    nx.set_node_attributes(network, node_attr)
+    visnet = Network(height = "860px", width = "1500px")
+    visnet.from_nx(network)
+    visnet.show('graph_community.html')
+
 
 graph = lst_graphs[2].copy()
 graph.vs['id_community_from'] = [0] * len(graph.vs) 
-cluster_artist_graph(graph=graph)            # Start point for tree probing
+#cluster_artist_graph(graph=graph)            # Start point for tree probing
 plot_cluster_tree()
+plot_interactive()
 
 sys.exit()
