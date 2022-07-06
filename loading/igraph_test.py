@@ -158,17 +158,17 @@ def plot_interactive() -> None:
     df_community_vertices = artists.community_hierarchy_vertices()
     max_qty = max(df_community_vertices['qty_artists_collection'])
     min_qty = min(df_community_vertices['qty_artists_collection'])
-    df_community_vertices['group'] = [1 if i > 0 else 2 for i in df_community_vertices['qty_artists_collection']]
     df_community_vertices['size'] = [round((i - min_qty)/(max_qty - min_qty)* 100 + 10) for i in df_community_vertices['qty_artists_collection']]
     df_community_vertices['label'] = [str(i) for i in df_community_vertices['qty_artists_collection']]
     df_community_vertices['title'] = [str(i) for i in df_community_vertices['qty_artists']]
+    df_community_vertices['color'] = ['#d45087' if i > 1 else '#2f4b7c' for i in df_community_vertices['qty_artists_collection']]
     df_community_vertices['title'] = '# Artists: ' + df_community_vertices['title'].map(str) + '\n' +\
         '# Artists in collection: ' + df_community_vertices['label'].map(str)
+    df_community_edges['color'] = ['#d45087' if i > 0 else '#2f4b7c' for i in df_community_edges['to_collection_artists']]
     network = nx.from_pandas_edgelist(df_community_edges, source = 'id_from', target = 'id_to')
-    
     node_attr = df_community_vertices.set_index('id_community').to_dict('index')
     nx.set_node_attributes(network, node_attr)
-    visnet = Network(height = "100%", width = "100%", bgcolor='#222222', font_color='white', layout='hierarchical')
+    visnet = Network(height = "100%", width = "100%", bgcolor='#222222', font_color='white')
     visnet.from_nx(network)
     visnet.show('graph_community.html')
 

@@ -86,7 +86,9 @@ class Artists(_DBStorage):
         return df_edges
 
     def community_hierarchy_edges(self) -> pd.DataFrame:
-        sql = "SELECT DISTINCT id_community_from as id_from, id_community as id_to, id_hierarchy FROM artist_community_hierarchy"
+        sql = "SELECT id_community_from as id_from, id_community as id_to, id_hierarchy, MAX(in_collection) AS to_collection_artists\
+            FROM artist_community_hierarchy\
+            GROUP BY id_community_from, id_community, id_hierarchy"
         db_con = sqlite3.connect(self.db_file)
         df_data = pd.read_sql_query(sql, con=db_con)
         db_con.close()
