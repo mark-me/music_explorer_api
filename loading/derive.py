@@ -238,15 +238,15 @@ class MasterRelease():
         return df_tracks
 
     def track_artists(self) -> pd.DataFrame:
-        artist = []
+        artists = []
         df_artists = pd.DataFrame()
         for track in self.d_release.tracklist:
             if 'extraartists' in track.data:
                 dict_artist = track.data['extraartists']
                 df_artist = pd.DataFrame(dict_artist)
                 df_artist['position'] = track.data['position']
-                artist.append(df_artist)
-        if len(artist) > 0:
+                artists.append(df_artist)
+        if len(artists) > 0:
             df_artists = pd.concat(artist, axis=0, ignore_index=True)  
             df_artists = df_artists[['name', 'role', 'id', 'resource_url', 'thumbnail_url', 'position']]  
             df_artists = df_artists.rename(columns={'name': 'name_artist', 'id': 'id_artist', 'resource_url': 'api_artist',\
@@ -255,12 +255,12 @@ class MasterRelease():
         return df_artists
 
     def videos(self) -> pd.DataFrame:
-        video = []
+        videos = []
         df_videos = pd.DataFrame()
         for video in self.d_release.videos:
             dict_video = video.data
             video.append(pd.DataFrame([dict_video]))
-        if len(video) > 0:
+        if len(videos) > 0:
             df_videos = pd.concat(video, axis=0, ignore_index=True)
             df_videos = df_videos[['uri', 'title', 'duration']]
             df_videos = df_videos.rename(columns={'uri': 'url_video'})
