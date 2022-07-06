@@ -347,13 +347,13 @@ class Release(MasterRelease):
         return df_formats
 
     def credits(self) -> pd.DataFrame:
-        artist = []
+        artists = []
         df_artists = pd.DataFrame()
         for artist in self.d_release.credits:
             df_artist = pd.DataFrame([artist.data])
-            artist.append(df_artist)
-        if len(artist) > 0:
-            df_artists = pd.concat(artist, axis=0, ignore_index=True)
+            artists.append(df_artist)
+        if len(artists) > 0:
+            df_artists = pd.concat(artists, axis=0, ignore_index=True)
             df_artists = df_artists[['name', 'role', 'id', 'resource_url', 'thumbnail_url']]  
             df_artists = df_artists.rename(columns={'name': 'name_artist', 'id': 'id_artist', 'resource_url': 'api_artist',\
                 'thumbnail_url': 'url_thumbnail'})      
