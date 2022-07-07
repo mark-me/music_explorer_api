@@ -8,7 +8,13 @@ class _DBStorage():
     """A base class for storing discogs data
     """
     def __init__(self, db_file) -> None:
-        self.db_file = db_file  
+        self.db_file = db_file
+
+    def execute_sql(self, sql: str) -> None:
+        db_con = sqlite3.connect(self.db_file)
+        cursor = db_con.cursor()
+        cursor.execute(sql)
+        cursor.close()
 
     def write_data(self, df: pd.DataFrame, name_table: str) -> None:
         """Write data to the database"""
@@ -48,7 +54,7 @@ class _DBStorage():
             db_con.close()
 
     def store_replace(self, df: pd.DataFrame, name_table: str) -> None:
-        """Storing data that """
+        """Storing data to a table"""
         db_con = sqlite3.connect(self.db_file)
         df.to_sql(name=name_table, con=db_con, if_exists='replace', index=False) 
         db_con.close() 

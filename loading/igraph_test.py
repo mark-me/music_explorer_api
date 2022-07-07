@@ -21,6 +21,12 @@ class Database(_db_reader._DBStorage):
         super().__init__(db_file)
         self.create_edges_view()
 
+    def execute_sql(self, sql: str) -> None:
+        db_con = sqlite3.connect(self.db_file)
+        cursor = db_con.cursor()
+        cursor.execute(sql)
+        cursor.close()    
+
     def create_edges_view(self) -> None:
         name_view = 'vw_artist_edges'
         self.drop_view(name_view=name_view)
@@ -55,6 +61,30 @@ class Database(_db_reader._DBStorage):
                 id_artist_to,\
                 relation_type"
         self.create_view(name_view=name_view, sql_definition=sql_definition)
+
+    def extract_community_dendrogram(self) -> None:
+        sql = "CREATE TEMPORARY TABLE ranked_eigenvalue AS\
+                    SELECT id_community,\
+                        name_artist,\
+                    FROM artist_community_hierarchy\
+                    WHERE in_collection = 1;\
+\
+                CREATE TEMPORARY TABLE community_label AS\
+                    SELECT id_community, GROUP_CONCAT(name_artist,'\n') AS label_community\
+                    FROM ranked_eigenvalue \
+                    WHERE rank_influence <= 3\
+                    GROUP BY id_community;\
+\
+                    SELECT a.id_community,\
+                        id_hierarchy + 1 AS id_hierarchy,\
+                        label_community,\
+                        SUM(in_collection) AS qty_artists_collection,\
+                        COUNT(*) as qty_artists\
+                    FROM artist_community_hierarchy a\
+                    LEFT JOIN community_label  b\
+                        ON b.id_community = a.id_community\
+                    GROUP BY a.id_community, id_hierarchy;"
+        self.execute_sql(sql=sql)
 
 # Create overall graph        
 db = Database(db_file=db_file)
@@ -138,6 +168,22 @@ def cluster_artist_graph(graph: ig.Graph) -> None:
     db_writer = _db_writer.ArtistNetwork(db_file=db_file)
     db_writer.cluster_hierarchy(df_hierarchy=df_data)
     print("Out of my depth: done!")  # TODO: Remove
+
+def extract_community_structure() -> None:
+    sql = "CREATE TEMPORARY TABLE ranked_eigenvalue AS\
+                SELECT id_community,\
+                    id_artist,\
+                    name_artist,\
+                    ROW_NUMBER() OVER (PARTITION BY id_community ORDER BY eigenvalue DESC) AS rank_influence\
+                FROM artist_community_hierarchy\
+                WHERE in_collection = 1;\
+            \
+            CREATE TEMPORARY TABLE ranked_eigenvalue AS\
+                SELECT id_community, GROUP_CONCAT(DISTINCT name_artist)\
+                FROM ranked_eigenvalue\
+                WHERE rank_influence <= 3\
+                GROUP BY id_community;"
+
 
 def plot_cluster_tree() -> None:
     df_community_edges = artists.community_hierarchy_edges()
