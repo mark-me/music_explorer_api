@@ -86,22 +86,14 @@ class Artists(_DBStorage):
         return df_edges
 
     def community_hierarchy_edges(self) -> pd.DataFrame:
-        sql = "SELECT id_community_from as id_from, id_community as id_to, id_hierarchy, MAX(in_collection) AS to_collection_artists\
-            FROM artist_community_hierarchy\
-            GROUP BY id_community_from, id_community, id_hierarchy"
+        sql = "SELECT * FROM community_dedrogram_edges"
         db_con = sqlite3.connect(self.db_file)
         df_data = pd.read_sql_query(sql, con=db_con)
         db_con.close()
         return df_data    
     
     def community_hierarchy_vertices(self) -> pd.DataFrame:
-        sql = "SELECT 0 as id_community, 0 AS id_hierarchy, SUM(in_collection) AS qty_artists_collection, COUNT(*) as qty_artists\
-                FROM artist_community_hierarchy\
-                WHERE id_hierarchy = 0\
-            UNION\
-                SELECT id_community, id_hierarchy + 1, SUM(in_collection) AS qty_artists_collection, COUNT(*) as qty_artists\
-                FROM artist_community_hierarchy\
-                GROUP BY id_community, id_hierarchy"
+        sql = "SELECT * FROM community_dedrogram_vertices"
         db_con = sqlite3.connect(self.db_file)
         df_data = pd.read_sql_query(sql, con=db_con)
         db_con.close()

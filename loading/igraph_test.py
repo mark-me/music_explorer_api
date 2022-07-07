@@ -2,6 +2,7 @@ import sys
 import datetime as dt
 import time
 import yaml
+import sqlite3
 import numpy as np
 import pandas as pd
 import igraph as ig
@@ -19,13 +20,7 @@ db_file = config['db_file']
 class Database(_db_reader._DBStorage):
     def __init__(self, db_file: str) -> None:
         super().__init__(db_file)
-        self.create_edges_view()
-
-    def execute_sql(self, sql: str) -> None:
-        db_con = sqlite3.connect(self.db_file)
-        cursor = db_con.cursor()
-        cursor.execute(sql)
-        cursor.close()    
+        self.create_edges_view() 
 
     def create_edges_view(self) -> None:
         name_view = 'vw_artist_edges'
@@ -63,28 +58,11 @@ class Database(_db_reader._DBStorage):
         self.create_view(name_view=name_view, sql_definition=sql_definition)
 
     def extract_community_dendrogram(self) -> None:
-        sql = "CREATE TEMPORARY TABLE ranked_eigenvalue AS\
-                    SELECT id_community,\
-                        name_artist,\
-                    FROM artist_community_hierarchy\
-                    WHERE in_collection = 1;\
-\
-                CREATE TEMPORARY TABLE community_label AS\
-                    SELECT id_community, GROUP_CONCAT(name_artist,'\n') AS label_community\
-                    FROM ranked_eigenvalue \
-                    WHERE rank_influence <= 3\
-                    GROUP BY id_community;\
-\
-                    SELECT a.id_community,\
-                        id_hierarchy + 1 AS id_hierarchy,\
-                        label_community,\
-                        SUM(in_collection) AS qty_artists_collection,\
-                        COUNT(*) as qty_artists\
-                    FROM artist_community_hierarchy a\
-                    LEFT JOIN community_label  b\
-                        ON b.id_community = a.id_community\
-                    GROUP BY a.id_community, id_hierarchy;"
-        self.execute_sql(sql=sql)
+        db_con = sqlite3.connect(self.db_file)
+        cursor = db_con.cursor()
+        sql_file = open("loading/sql/extract_community_dendrogram.sql")
+        sql_as_string = sql_file.read()
+        cursor.executescript(sql_as_string)
 
 # Create overall graph        
 db = Database(db_file=db_file)
@@ -169,22 +147,6 @@ def cluster_artist_graph(graph: ig.Graph) -> None:
     db_writer.cluster_hierarchy(df_hierarchy=df_data)
     print("Out of my depth: done!")  # TODO: Remove
 
-def extract_community_structure() -> None:
-    sql = "CREATE TEMPORARY TABLE ranked_eigenvalue AS\
-                SELECT id_community,\
-                    id_artist,\
-                    name_artist,\
-                    ROW_NUMBER() OVER (PARTITION BY id_community ORDER BY eigenvalue DESC) AS rank_influence\
-                FROM artist_community_hierarchy\
-                WHERE in_collection = 1;\
-            \
-            CREATE TEMPORARY TABLE ranked_eigenvalue AS\
-                SELECT id_community, GROUP_CONCAT(DISTINCT name_artist)\
-                FROM ranked_eigenvalue\
-                WHERE rank_influence <= 3\
-                GROUP BY id_community;"
-
-
 def plot_cluster_tree() -> None:
     df_community_edges = artists.community_hierarchy_edges()
     df_community_vertices = artists.community_hierarchy_vertices()
@@ -205,11 +167,12 @@ def plot_interactive() -> None:
     max_qty = max(df_community_vertices['qty_artists_collection'])
     min_qty = min(df_community_vertices['qty_artists_collection'])
     df_community_vertices['size'] = [round((i - min_qty)/(max_qty - min_qty)* 100 + 10) for i in df_community_vertices['qty_artists_collection']]
-    df_community_vertices['label'] = [str(i) for i in df_community_vertices['qty_artists_collection']]
-    df_community_vertices['title'] = [str(i) for i in df_community_vertices['qty_artists']]
-    df_community_vertices['color'] = ['#d45087' if i > 1 else '#2f4b7c' for i in df_community_vertices['qty_artists_collection']]
-    df_community_vertices['title'] = '# Artists: ' + df_community_vertices['title'].map(str) + '\n' +\
-        '# Artists in collection: ' + df_community_vertices['label'].map(str)
+    df_community_vertices['label'] = df_community_vertices['id_community'].map(str)
+    df_community_vertices['color'] = ['#d45087' if i >= 1 else '#2f4b7c' for i in df_community_vertices['qty_artists_collection']]
+    df_community_vertices.label_community_collection.fillna(df_community_vertices.label_community, inplace=True)
+    df_community_vertices['title'] = '# Artists: ' + df_community_vertices['qty_artists'].map(str) + '\n' +\
+        '# Artists in collection: ' + df_community_vertices['qty_artists_collection'].map(str) + '\n' +\
+        df_community_vertices['label_community_collection'].map(str)
     df_community_edges['color'] = ['#d45087' if i > 0 else '#2f4b7c' for i in df_community_edges['to_collection_artists']]
     network = nx.from_pandas_edgelist(df_community_edges, source = 'id_from', target = 'id_to')
     node_attr = df_community_vertices.set_index('id_community').to_dict('index')
@@ -222,6 +185,7 @@ def plot_interactive() -> None:
 graph = lst_graphs[2].copy()
 graph.vs['id_community_from'] = [0] * len(graph.vs) 
 #cluster_artist_graph(graph=graph)            # Start point for tree probing
+db.extract_community_dendrogram()
 #plot_cluster_tree()
 plot_interactive()
 
