@@ -77,7 +77,7 @@ class Collection(_DBStorage):
     def create_views(self) -> None:
         db_con = sqlite3.connect(self.db_file)
         cursor = db_con.cursor()
-        sql_file = open("loading/create_views.sql")
+        sql_file = open("loading/sql/views_collection.sql")
         sql_as_string = sql_file.read()
         cursor.executescript(sql_as_string)
 
