@@ -98,52 +98,20 @@ class Database(_db_reader._DBStorage):
     def __init__(self, db_file: str) -> None:
         super().__init__(db_file)
 
-    def create_edges_view(self) -> None:
-        name_view = 'vw_artists_edges'
-        self.drop_view(name_view=name_view)
-        sql_definition = "SELECT DISTINCT id_artist_from,\
-                            id_artist_to,\
-                            relation_type\
-                        FROM (\
-                                SELECT id_member AS id_artist_from,\
-                                    id_artist as id_artist_to,\
-                                    'group_member' as relation_type\
-                                FROM artist_members\
-                            UNION\
-                                SELECT id_artist as id_artist_from,\
-                                    id_group AS id_artist_to,\
-                                    'group_member' as relation_type\
-                                FROM artist_groups\
-                            UNION\
-                                SELECT a.id_alias,\
-                                    a.id_artist,\
-                                    'artist_alias'\
-                                FROM artist_aliases a\
-                                LEFT JOIN artist_aliases b\
-                                    ON a.id_artist = b.id_alias AND\
-                                        a.id_alias = b.id_artist\
-                                WHERE a.id_artist > b.id_artist OR\
-                                    b.id_artist IS NULL\
-                            )\
-                        INNER JOIN artist a\
-                            ON a.id_artist = id_artist_from\
-                        INNER JOIN artist b\
-                            ON b.id_artist = id_artist_to\
-                        GROUP BY id_artist_from,\
-                            id_artist_to,\
-                            relation_type"
-        self.create_view(name_view=name_view, sql_definition=sql_definition)
-
     def start(self) -> None:
-        db_reader = _db_reader.Artists(db_file=self.db_file)
-        db_writer = _db_writer.ArtistNetwork(db_file=self.db_file)
-        df_vertices = db_reader.vertices()
-        df_edges = db_reader.edges()   
-        derive = _derive.ArtistNetwork(df_vertices=df_vertices, df_edges=df_edges)
-        if df_edges.shape[0] > 0 and df_vertices.shape[0] > 0:
-            db_writer.cluster_hierarchy(df_hierarchy=derive.cluster_betweenness())
-            db_writer.centrality(df_centrality=derive.centrality())
-            print("Ooohhh.... There is something to cluster")
+        self.artist_is_group()
+        self.extract_artist_edges()
+        self.artist_thumbnail()
+        self.artist_collection_items()
+        # db_reader = _db_reader.Artists(db_file=self.db_file)
+        # db_writer = _db_writer.ArtistNetwork(db_file=self.db_file)
+        # df_vertices = db_reader.vertices()
+        # df_edges = db_reader.edges()   
+        # derive = _derive.ArtistNetwork(df_vertices=df_vertices, df_edges=df_edges)
+        # if df_edges.shape[0] > 0 and df_vertices.shape[0] > 0:
+        #     db_writer.cluster_hierarchy(df_hierarchy=derive.cluster_betweenness())
+        #     db_writer.centrality(df_centrality=derive.centrality())
+        #     print("Ooohhh.... There is something to cluster")
 
     def artist_is_group(self) -> None:
         sql = "UPDATE artist SET is_group = (SELECT 1 FROM artist_members WHERE id_artist = artist.id_artist)"
@@ -178,4 +146,11 @@ class Database(_db_reader._DBStorage):
         cursor = db_con.cursor()
         cursor.execute(sql)
         db_con.close()
+
+    def extract_artist_edges(self) -> None:
+        db_con = sqlite3.connect(self.db_file)
+        cursor = db_con.cursor()
+        sql_file = open("loading/sql/extract_artist_relations.sql")
+        sql_as_string = sql_file.read()
+        cursor.executescript(sql_as_string)
         
