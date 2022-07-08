@@ -120,20 +120,6 @@ def cluster_artist_graph(graph: ig.Graph) -> None:
     db_writer.cluster_hierarchy(df_hierarchy=df_data)
     print("Out of my depth: done!")  # TODO: Remove
 
-def plot_cluster_tree() -> None:
-    df_community_edges = artists.community_hierarchy_edges()
-    df_community_vertices = artists.community_hierarchy_vertices()
-    graph_community = ig.Graph.DataFrame(edges=df_community_edges, 
-                                        directed=False,
-                                        vertices=df_community_vertices)
-    colors = ['#F0A0FF', '#0075DC', '#993F00', '#4C005C', '#191919', '#005C31', '#2BCE48', '#FFCC99', '#808080', '#94FFB5', '#8F7C00',
-                '#9DCC00', '#C20088', '#003380', '#FFA405', '#FFA8BB', '#426600', '#FF0010', '#5EF1F2', '#00998F', '#E0FF66', '#740AFF',
-                '#990000', '#FFFF80', '#FFE100', '#FF5005']
-    graph_community.vs['label'] = graph_community.vs['qty_artists_collection']
-    # graph_community.vs['color'] = [colors[i] for i in graph_community.vs['id_hierarchy']]
-    #graph_community.write_svg('graph_community.svg', layout='reingold_tilford_circular', width=1600, height=800)
-    graph_community.write_svg('graph_community.svg', layout='sugiyama', width=1600, height=800)
-
 def plot_interactive() -> None:
     df_community_edges = artists.community_hierarchy_edges()
     df_community_vertices = artists.community_hierarchy_vertices()
@@ -159,7 +145,6 @@ graph = lst_graphs[2].copy()
 graph.vs['id_community_from'] = [0] * len(graph.vs) 
 cluster_artist_graph(graph=graph)            # Start point for tree probing
 db.extract_community_dendrogram()
-#plot_cluster_tree()
 plot_interactive()
 
 sys.exit()
