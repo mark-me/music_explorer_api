@@ -20,42 +20,6 @@ db_file = config['db_file']
 class Database(_db_reader._DBStorage):
     def __init__(self, db_file: str) -> None:
         super().__init__(db_file)
-        self.create_edges_view() 
-
-    def create_edges_view(self) -> None:
-        name_view = 'vw_artist_edges'
-        self.drop_view(name_view=name_view)
-        sql_definition = "SELECT DISTINCT id_artist_from,\
-                id_artist_to,\
-                relation_type\
-            FROM (  SELECT id_member AS id_artist_from,\
-                        id_artist as id_artist_to,\
-                        'group_member' as relation_type\
-                    FROM artist_members\
-                UNION\
-                    SELECT id_artist as id_artist_from,\
-                        id_group AS id_artist_to,\
-                        'group_member' as relation_type\
-                    FROM artist_groups\
-                UNION\
-                    SELECT a.id_alias,\
-                        a.id_artist,\
-                        'artist_alias'\
-                    FROM artist_aliases a\
-                    LEFT JOIN artist_aliases b\
-                        ON a.id_artist = b.id_alias AND\
-                            a.id_alias = b.id_artist\
-                    WHERE a.id_artist > b.id_artist OR\
-                        b.id_artist IS NULL\
-                )\
-            INNER JOIN artist a\
-                ON a.id_artist = id_artist_from\
-            INNER JOIN artist b\
-                ON b.id_artist = id_artist_to\
-            GROUP BY id_artist_from,\
-                id_artist_to,\
-                relation_type"
-        self.create_view(name_view=name_view, sql_definition=sql_definition)
 
     def extract_community_dendrogram(self) -> None:
         db_con = sqlite3.connect(self.db_file)
@@ -64,8 +28,17 @@ class Database(_db_reader._DBStorage):
         sql_as_string = sql_file.read()
         cursor.executescript(sql_as_string)
 
+    def extract_artist_edges(self) -> None:
+        db_con = sqlite3.connect(self.db_file)
+        cursor = db_con.cursor()
+        sql_file = open("loading/sql/extract_artist_relations.sql")
+        sql_as_string = sql_file.read()
+        cursor.executescript(sql_as_string)
+
+
 # Create overall graph        
 db = Database(db_file=db_file)
+db.extract_artist_edges()
 artists = _db_reader.Artists(db_file=db_file)
 df_edges = artists.edges()
 df_vertices = artists.vertices()[['id_artist', 'name_artist', 'in_collection']]
@@ -184,7 +157,7 @@ def plot_interactive() -> None:
 
 graph = lst_graphs[2].copy()
 graph.vs['id_community_from'] = [0] * len(graph.vs) 
-#cluster_artist_graph(graph=graph)            # Start point for tree probing
+cluster_artist_graph(graph=graph)            # Start point for tree probing
 db.extract_community_dendrogram()
 #plot_cluster_tree()
 plot_interactive()

@@ -81,7 +81,7 @@ class Artists(_DBStorage):
     
     def edges(self) -> pd.DataFrame:
         db_con = sqlite3.connect(self.db_file)
-        df_edges = pd.read_sql_query("SELECT * FROM vw_artist_edges", con=db_con)
+        df_edges = pd.read_sql_query("SELECT * FROM artist_relations", con=db_con)
         db_con.close() 
         return df_edges
 
