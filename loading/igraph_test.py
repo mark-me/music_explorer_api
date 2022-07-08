@@ -2,6 +2,7 @@ import sys
 import datetime as dt
 import time
 import yaml
+import sqlite3
 import numpy as np
 import pandas as pd
 import igraph as ig
@@ -112,7 +113,7 @@ def cluster_artist_graph(graph: ig.Graph) -> None:
     community_last = 0
     while qty_graphs_queued > 0:
         dict_queue = lst_processing_queue.pop(0)
-        graph = (dict_queue.get('graph')).simplify()
+        graph = (dict_queue.get('graph')).simplify()  # Remove self referential and double links
         tree_level = dict_queue.get('tree_level')
         
         qty_collection_items = sum(graph.vs['in_collection'])
