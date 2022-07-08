@@ -70,7 +70,7 @@ def cluster_artist_graph(graph: ig.Graph) -> None:
         qty_vertices = len(graph.vs)
         print("Tree depth: " + str(tree_level) + " - Total graph # vertices: " + str(len(graph.vs))) # TODO: Remove
         # Only cluster if the number of vertices is higher than 15
-        if qty_collection_items > 15:
+        if qty_collection_items > 2:
             # Cluster
             tic = time.perf_counter()  # TODO: Remove
             #cluster_hierarchy = graph.community_edge_betweenness(directed=False)
@@ -89,28 +89,28 @@ def cluster_artist_graph(graph: ig.Graph) -> None:
             eigenvalue = []
             for community in communities:
                 graph_sub = cluster_communities.subgraph(community)
-                graph_sub.vs['id_community_from'] = [community] * len(graph_sub.vs)
+                graph_sub.vs['id_community_from'] = [community + (community_last + 1)] * len(graph_sub.vs)
                 print("Community " + str(community) + " has " + str(len(graph_sub.vs)) + " vertices")  # TODO: Remove
                 qty_vertices_sub = qty_vertices_sub + len(graph_sub.vs)  # TODO: Remove
                 lst_processing_queue.append({'graph': graph_sub.copy(), 'tree_level': tree_level + 1})
                 # Calculate eigenvalue per sub_graph
                 eigenvalue = eigenvalue + graph_sub.eigenvector_centrality(directed=False)
             print("Vertices processed: " + str(qty_vertices_sub)) # TODO: Remove
-        else:
-            community_membership = [0] * qty_vertices
-            eigenvalue = [1] * qty_vertices
+        # else:
+        #     community_membership = [0] * qty_vertices
+        #     eigenvalue = [1] * qty_vertices
             
         # Make sure community numbers are unique    
-        community_membership = [i + (community_last + 1) for i in community_membership]
-        community_last = max(community_membership)
-        df_cluster_data = pd.DataFrame({'id_artist': graph.vs['name'],
-                                        'name_artist': graph.vs['name_artist'],
-                                        'in_collection': graph.vs['in_collection'],
-                                        'id_hierarchy': [tree_level] * qty_vertices,
-                                        'id_community_from': graph.vs['id_community_from'],
-                                        'id_community': community_membership,
-                                        'eigenvalue': eigenvalue})
-        lst_cluster_data.append(df_cluster_data)
+            community_membership = [i + (community_last + 1) for i in community_membership]
+            community_last = max(community_membership)
+            df_cluster_data = pd.DataFrame({'id_artist': graph.vs['name'],
+                                            'name_artist': graph.vs['name_artist'],
+                                            'in_collection': graph.vs['in_collection'],
+                                            'id_hierarchy': [tree_level] * qty_vertices,
+                                            'id_community_from': graph.vs['id_community_from'],
+                                            'id_community': community_membership,
+                                            'eigenvalue': eigenvalue})
+            lst_cluster_data.append(df_cluster_data)
 
         qty_graphs_queued = len(lst_processing_queue)
         print("Graphs in queue: " + str(qty_graphs_queued))  # TODO: Remove
