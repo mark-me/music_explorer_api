@@ -24,10 +24,10 @@ FROM (  SELECT id_member AS id_artist_from,
         WHERE a.id_artist > b.id_artist OR
             b.id_artist IS NULL
     )
-INNER JOIN artist a
-    ON a.id_artist = id_artist_from
-INNER JOIN artist b
-    ON b.id_artist = id_artist_to
+-- INNER JOIN artist a
+--     ON a.id_artist = id_artist_from
+-- INNER JOIN artist b
+--     ON b.id_artist = id_artist_to
 GROUP BY id_artist_from,
     id_artist_to,
     relation_type;

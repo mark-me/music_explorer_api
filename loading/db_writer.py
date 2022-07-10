@@ -179,6 +179,10 @@ class Artists(_DBStorage):
     def urls(self, df_urls: pd.DataFrame) -> None:
         """Store the artist's url(s)"""
         self.write_data(df=df_urls, name_table='artist_urls')
+        
+    def ignore_list(self, df_ignore: pd.DataFrame) -> None:
+        """Store artist id's that should be ignored for further processing"""
+        self.store_replace(df=df_ignore, name_table='artist_ignore')
 
 
 class Master(_DBStorage):

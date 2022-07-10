@@ -36,6 +36,7 @@ CREATE TABLE "artist_groups" (
 	"url_thumbnail"	TEXT,
 	PRIMARY KEY("id_group","id_artist")
 );
+CREATE INDEX idx_artist_groups_id_artist ON artist_groups (id_artist);
 
 CREATE TABLE artist_images (
     id_artist INTEGER, 

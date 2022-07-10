@@ -41,7 +41,8 @@ class Collection(_DBStorage):
                         UNION\
                             SELECT id_group FROM artist_groups\
                 )\
-            WHERE id_artist NOT IN ( SELECT id_artist FROM artist )"
+            WHERE id_artist NOT IN ( SELECT id_artist FROM artist ) AND\
+					id_artist NOT IN ( SELECT id_artist FROM artist_ignore)"
         self.create_view(name_view=name_view, sql_definition=sql_definition)
 
 
@@ -72,12 +73,15 @@ class Artists(_DBStorage):
 
     def artists(self) -> pd.DataFrame:
         db_con = sqlite3.connect(self.db_file)
+        df_artists = pd.read_sql_query("SELECT *, IIF(qty_collection_items > 0, 1, 0) AS in_collection FROM artist", con=db_con)
+        db_con.close() 
+        return df_artists
+
+    def vertices(self) -> pd.DataFrame:
+        db_con = sqlite3.connect(self.db_file)
         df_vertices = pd.read_sql_query("SELECT *, IIF(qty_collection_items > 0, 1, 0) AS in_collection FROM artist", con=db_con)
         db_con.close() 
         return df_vertices
-
-    def vertices(self) -> pd.DataFrame:
-        return self.artists()
     
     def edges(self) -> pd.DataFrame:
         db_con = sqlite3.connect(self.db_file)
@@ -86,14 +90,14 @@ class Artists(_DBStorage):
         return df_edges
 
     def community_hierarchy_edges(self) -> pd.DataFrame:
-        sql = "SELECT * FROM community_dedrogram_edges"
+        sql = "SELECT * FROM community_dendrogram_edges"
         db_con = sqlite3.connect(self.db_file)
         df_data = pd.read_sql_query(sql, con=db_con)
         db_con.close()
         return df_data    
     
     def community_hierarchy_vertices(self) -> pd.DataFrame:
-        sql = "SELECT * FROM community_dedrogram_vertices"
+        sql = "SELECT * FROM community_dendrogram_vertices"
         db_con = sqlite3.connect(self.db_file)
         df_data = pd.read_sql_query(sql, con=db_con)
         db_con.close()
