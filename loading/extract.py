@@ -1,5 +1,4 @@
 import os
-import datetime as dt
 import yaml
 import sqlite3
 import numpy as np
@@ -142,26 +141,46 @@ class Discogs:
         
     def __artist_vertices(self) -> pd.DataFrame:
         sql = "SELECT id_artist, MAX(in_collection) AS in_collection\
-            FROM (\
-                SELECT id_artist, IIF(qty_collection_items > 0, 1, 0) AS in_collection FROM artist\
-                UNION\
-                SELECT id_alias, 0 as in_collection from artist_aliases\
-                UNION\
-                SELECT id_member, 0 FROM artist_members\
-                UNION\
-                SELECT id_group, 0 FROM artist_groups\
-                UNION\
-                SELECT id_artist, 0 FROM artist_masters WHERE role IN ('Main', 'Appearance', 'TrackAppearance')\
-            )\
-            GROUP BY id_artist"
+                FROM (\
+                    SELECT id_artist, IIF(qty_collection_items > 0, 1, 0) AS in_collection FROM artist\
+                    UNION\
+                    SELECT id_alias, 0 as in_collection from artist_aliases\
+                    UNION\
+                    SELECT id_member, 0 FROM artist_members\
+                    UNION\
+                    SELECT id_group, 0 FROM artist_groups\
+                    UNION\
+                    SELECT id_artist, 0 FROM artist_masters WHERE role IN ('Main', 'Appearance', 'TrackAppearance')\
+                )\
+                GROUP BY id_artist"
         db_con = sqlite3.connect(self.db_file)
         df_vertices = pd.read_sql_query(sql=sql, con=db_con)
         db_con.close() 
         return df_vertices
+    
+    def __artist_edges(self) -> pd.DataFrame:
+        sql = "SELECT DISTINCT id_artist_from, id_artist_to, relation_type\
+                FROM (\
+                        SELECT id_member AS id_artist_from, id_artist as id_artist_to, 'group_member' as relation_type\
+                        FROM artist_members\
+                    UNION\
+                        SELECT id_artist, id_group, 'group_member' FROM artist_groups\
+                    UNION\
+                        SELECT a.id_alias, a.id_artist, 'artist_alias'\
+                        FROM artist_aliases a\
+                        LEFT JOIN artist_aliases b\
+                            ON a.id_artist = b.id_alias AND\
+                                a.id_alias = b.id_artist\
+                        WHERE a.id_artist > b.id_artist OR b.id_artist IS NULL\
+                    )\
+                GROUP BY id_artist_from, id_artist_to, relation_type;"
+        db_con = sqlite3.connect(self.db_file)
+        df_edges = pd.read_sql_query(sql=sql, con=db_con)
+        db_con.close() 
+        return df_edges       
         
     def __extract_artist_to_ignore(self) -> None:
-        artists = _db_reader.Artists(db_file=self.db_file)
-        graph = ig.Graph.DataFrame(edges=artists.edges(), directed=False, 
+        graph = ig.Graph.DataFrame(edges=self.__artist_edges(), directed=False, 
                                     vertices=self.__artist_vertices())
         # Select relevant vertices
         vtx_collection = graph.vs.select(in_collection_eq=1)
