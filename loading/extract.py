@@ -56,7 +56,6 @@ class Discogs:
         #self.__artist_thumbnail()
         self.__artist_collection_items()
         self.__extract_artist_edges()
-        self.__extract_artist_to_ignore()
         self.__artists_from_collection()
         
     def __collection_value(self) -> None:
@@ -79,6 +78,7 @@ class Discogs:
         db_reader = _db_reader.Collection(db_file=self.db_file)
         qty_artists_not_added = db_reader.qty_artists_not_added()
         while qty_artists_not_added > 0:
+            self.__extract_artist_to_ignore()
             qty_artists_not_added = db_reader.qty_artists_not_added()
             df_artists_new = db_reader.artists_not_added()
             artists = []
@@ -104,7 +104,7 @@ class Discogs:
         cursor = db_con.cursor()
         cursor.execute(sql)
         db_con.close()
-                
+
     def __artist_thumbnail(self) -> None:
         sql = "UPDATE artist\
                 SET url_thumbnail = (\
@@ -119,7 +119,7 @@ class Discogs:
         cursor = db_con.cursor()
         cursor.execute(sql)
         db_con.close()
-                    
+
     def __artist_collection_items(self) -> None:
         sql = "UPDATE artist\
             SET qty_collection_items = (SELECT COUNT(*)\
@@ -138,7 +138,7 @@ class Discogs:
         sql_file = open("loading/sql/extract_artist_relations.sql")
         sql_as_string = sql_file.read()
         cursor.executescript(sql_as_string)
-        
+
     def __artist_vertices(self) -> pd.DataFrame:
         sql = "SELECT id_artist, MAX(in_collection) AS in_collection\
                 FROM (\
@@ -157,7 +157,7 @@ class Discogs:
         df_vertices = pd.read_sql_query(sql=sql, con=db_con)
         db_con.close() 
         return df_vertices
-    
+
     def __artist_edges(self) -> pd.DataFrame:
         sql = "SELECT DISTINCT id_artist_from, id_artist_to, relation_type\
                 FROM (\
