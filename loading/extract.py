@@ -51,8 +51,8 @@ class Discogs:
 
     def start(self) -> None:
         """Starts user's collection processing"""
-        #self.__collection_value()
-        #self.__collection_items()
+        self.__collection_value()
+        self.__collection_items()
         #self.__artist_is_group()
         #self.__artist_thumbnail()
         self.__artist_collection_items()
