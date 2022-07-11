@@ -125,7 +125,7 @@ class Discogs:
             SET qty_collection_items = (SELECT COUNT(*)\
                         FROM collection_items\
                         INNER JOIN release_artists\
-                            ON release_artists.id_release = collection_items.id_release \
+                            ON release_artists.id_release = collection_items.id_release\
                         WHERE  release_artists.id_artist = artist.id_artist)"
         db_con = sqlite3.connect(self.db_file)
         cursor = db_con.cursor()
