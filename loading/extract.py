@@ -76,10 +76,9 @@ class Discogs:
     def __artists_from_collection(self) -> None:
         """Process artist information derived from groups and memberships"""
         db_reader = _db_reader.Collection(db_file=self.db_file)
+        self.__extract_artist_to_ignore()
         qty_artists_not_added = db_reader.qty_artists_not_added()
         while qty_artists_not_added > 0:
-            self.__extract_artist_to_ignore()
-            qty_artists_not_added = db_reader.qty_artists_not_added()
             df_artists_new = db_reader.artists_not_added()
             artists = []
             for index, row in df_artists_new.iterrows():
@@ -87,6 +86,8 @@ class Discogs:
             derive = _derive.Artists(artists=artists, db_file=self.db_file)
             derive.process_masters = False
             derive.process()
+            self.__extract_artist_to_ignore()
+            qty_artists_not_added = db_reader.qty_artists_not_added()
 
     def masters_from_artists(self) -> None:
         """Process master release information from artists"""
