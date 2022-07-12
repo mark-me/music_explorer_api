@@ -27,9 +27,9 @@ CREATE TEMPORARY TABLE community_label AS
     WHERE rank_eigenvalue <= 3
     GROUP BY id_community;
 
-DROP TABLE IF EXISTS community_dedrogram_vertices;
+DROP TABLE IF EXISTS community_dendrogram_vertices;
 
-CREATE TABLE community_dedrogram_vertices AS
+CREATE TABLE community_dendrogram_vertices AS
     SELECT a.id_community,
         id_hierarchy + 1 AS id_hierarchy,
         label_community,
@@ -58,9 +58,9 @@ CREATE TABLE community_dedrogram_vertices AS
 
 /* Create community edges 
 */
-DROP TABLE IF EXISTS community_dedrogram_edges;
+DROP TABLE IF EXISTS community_dendrogram_edges;
 
-CREATE TABLE community_dedrogram_edges AS
+CREATE TABLE community_dendrogram_edges AS
     SELECT id_community_from as id_from, 
         id_community as id_to, id_hierarchy, 
         MAX(in_collection) AS to_collection_artists
