@@ -2,74 +2,15 @@ import sqlite3
 from unicodedata import name
 import numpy as np
 import pandas as pd
+import db_utils as _db_utils
 
 
-class _DBStorage():
-    """A base class for storing discogs data
-    """
-    def __init__(self, db_file) -> None:
-        self.db_file = db_file
-
-    def execute_sql(self, sql: str) -> None:
-        db_con = sqlite3.connect(self.db_file)
-        cursor = db_con.cursor()
-        cursor.execute(sql)
-        cursor.close()
-
-    def write_data(self, df: pd.DataFrame, name_table: str) -> None:
-        """Write data to the database"""
-        if not df.empty: 
-            self.create_table(name_table=name_table)
-            self.store_append(df=df, name_table=name_table)
-            
-    def create_table(self, name_table: str) -> None:
-        """Virtual function for creating tables"""
-        pass
-               
-    def table_exists(self, name_table: str) -> bool:
-        """Checks whether a table exists"""
-        db_con = sqlite3.connect(self.db_file)
-        cursor = db_con.cursor()
-        cursor.execute("SELECT count(name) FROM sqlite_master WHERE type='table' AND name='" + name_table + "'")
-        does_exist = cursor.fetchone()[0]==1 
-        db_con.close()
-        return does_exist
-
-    def view_exists(self, name_view: str) -> bool:
-        """Checks whether a view exists"""
-        db_con = sqlite3.connect(self.db_file)
-        cursor = db_con.cursor()
-        cursor.execute("SELECT count(name) FROM sqlite_master WHERE type='view' AND name='" + name_view + "'")
-        does_exist = cursor.fetchone()[0]==1 
-        db_con.close()
-        return does_exist
-
-    def drop_existing_table(self, name_table: str) -> None:
-        """Dropping a table"""
-        if self.table_exists(name_table): 
-            db_con = sqlite3.connect(self.db_file)
-            cursor = db_con.cursor()
-            cursor.execute("DROP TABLE " + name_table)
-            db_con.commit()
-            db_con.close()
-
-    def store_replace(self, df: pd.DataFrame, name_table: str) -> None:
-        """Storing data to a table"""
-        db_con = sqlite3.connect(self.db_file)
-        df.to_sql(name=name_table, con=db_con, if_exists='replace', index=False) 
-        db_con.close() 
-
-    def store_append(self, df: pd.DataFrame, name_table: str) -> None:
-        db_con = sqlite3.connect(self.db_file)
-        df.to_sql(name=name_table, con=db_con, if_exists='append', index=False) 
-        db_con.close()   
-
-
-class Collection(_DBStorage):
+class Collection(_db_utils.DBStorage):
     """A class for storing collection item data
     """
     def __init__(self, db_file) -> None:
         super().__init__(db_file)
+        self.create_table_artist_write_attempts()
 
     def drop_tables(self) -> None:
         self.drop_existing_table(name_table='collection_items')
@@ -80,6 +21,13 @@ class Collection(_DBStorage):
         sql_file = open("loading/sql/views_collection.sql")
         sql_as_string = sql_file.read()
         cursor.executescript(sql_as_string)
+        
+    def create_table_artist_write_attempts(self) -> None:
+        if not self.table_exists('artist_write_attempts'):
+            db_con = sqlite3.connect(self.db_file)
+            cursor = db_con.cursor()
+            cursor.execute("CREATE TABLE artist_write_attempts ( id_artist INTEGER, qty_attempts INTEGER )")
+            cursor.close()
 
     def value(self, df_value: pd.DataFrame) -> None:
         self.store_append(df=df_value, name_table='collection_value')
@@ -107,8 +55,11 @@ class Collection(_DBStorage):
         if df_styles.shape[0] > 0:
             self.store_append(df=df_styles, name_table='collection_styles')    
 
+    def artist_write_attempts(self, df_write_attempts: pd.DataFrame) -> None:
+        if df_write_attempts.shape[0] > 0:
+            self.store_replace(df=df_write_attempts, name_table='artist_write_attempts')
 
-class Artists(_DBStorage):
+class Artists(_db_utils.DBStorage):
     """A class for storing artist related data
     """
     def __init__(self, db_file) -> None:
@@ -185,7 +136,7 @@ class Artists(_DBStorage):
         self.store_replace(df=df_ignore, name_table='artist_ignore')
 
 
-class Master(_DBStorage):
+class Master(_db_utils.DBStorage):
     def __init__(self, db_file) -> None:
         super().__init__(db_file)
 
@@ -236,7 +187,7 @@ class Master(_DBStorage):
             self.store_append(df=df_stats, name_table='master_stats')
 
 
-class Release(_DBStorage):
+class Release(_db_utils.DBStorage):
     def __init__(self, db_file) -> None:
         super().__init__(db_file)
 
@@ -307,7 +258,7 @@ class Release(_DBStorage):
             self.store_append(df=df_stats, name_table='release_stats')
 
 
-class ArtistNetwork(_DBStorage):
+class ArtistNetwork(_db_utils.DBStorage):
     def __init__(self, db_file) -> None:
         super().__init__(db_file)
 

@@ -1,4 +1,5 @@
 import os
+from re import I
 import yaml
 import sqlite3
 import numpy as np
@@ -52,8 +53,8 @@ class Discogs:
         """Starts user's collection processing"""
         self.__collection_value()
         self.__collection_items()
-        #self.__artist_is_group()
-        #self.__artist_thumbnail()
+        self.__artist_is_group()
+        self.__artist_thumbnail()
         self.__artist_collection_items()
         self.__extract_artist_edges()
         self.__artists_from_collection()
@@ -76,17 +77,23 @@ class Discogs:
     def __artists_from_collection(self) -> None:
         """Process artist information derived from groups and memberships"""
         db_reader = _db_reader.Collection(db_file=self.db_file)
+        db_writer = _db_writer.Collection(db_file=self.db_file)
         self.__extract_artist_to_ignore()
         qty_artists_not_added = db_reader.qty_artists_not_added()
         while qty_artists_not_added > 0:
+            df_write_attempts = db_reader.artists_write_attempts()
             df_artists_new = db_reader.artists_not_added()
             artists = []
             for index, row in df_artists_new.iterrows():
                 artists.append(self.client.artist(id=row['id_artist']))
+                df_write_attempts = pd.concat([df_write_attempts, pd.DataFrame.from_records([{ 'id_artist': row['id_artist'], 'qty_attempts': 1 }])])
+                df_write_attempts = df_write_attempts.append({'id_artist': row['id_artist'], 'qty_attempts': 1}, ignore_index=True)
             derive = _derive.Artists(artists=artists, db_file=self.db_file)
             derive.process_masters = False
             derive.process()
             self.__extract_artist_to_ignore()
+            df_write_attempts = df_write_attempts.groupby(['id_artist'])['qty_attempts'].sum().reset_index()
+            db_writer.artist_write_attempts(df_write_attempts=df_write_attempts)
             qty_artists_not_added = db_reader.qty_artists_not_added()
 
     def masters_from_artists(self) -> None:
