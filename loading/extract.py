@@ -9,17 +9,18 @@ from tqdm import tqdm
 import discogs_client
 
 import derive as _derive
+import db_utils as _db_utils
 import db_writer as _db_writer
 import db_reader as _db_reader
 
 
-class Discogs:
+class Discogs(_db_utils.DBStorage):
     """A class for extracting, processing and storing a user's collection data from Discogs
     """
     def __init__(self, consumer_key: str, consumer_secret: str, db_file: str) -> None:
+        super().__init__(db_file)
         self.consumer_key = consumer_key
         self.consumer_secret = consumer_secret
-        self.db_file = db_file
         self.client = self.__set_user_tokens()
 
     def __set_user_tokens(self) -> discogs_client.Client:
@@ -51,9 +52,9 @@ class Discogs:
 
     def start(self) -> None:
         """Starts user's collection processing"""
-        self.collection_value()
-        self.collection_items()
-        self.artist_set_attributes()
+        #self.collection_value()
+        #self.collection_items()
+        #self.artist_set_attributes()
         self.artists_from_collection()
         self.extract_artist_edges()
 
@@ -73,6 +74,7 @@ class Discogs:
             derive.process()
 
     def __artist_vertices(self) -> pd.DataFrame:
+        """Retrieve artists in order to determine where to stop discogs extraction"""
         sql = "SELECT id_artist, MAX(in_collection) AS in_collection\
                 FROM (  SELECT id_artist, IIF(qty_collection_items > 0, 1, 0) AS in_collection FROM artist\
                             UNION\
@@ -82,7 +84,15 @@ class Discogs:
                             UNION\
                         SELECT id_group, 0 FROM artist_groups\
                             UNION\
-                        SELECT id_artist, 0 FROM artist_masters WHERE role IN ('Main', 'Appearance', 'TrackAppearance') )\
+                        SELECT id_artist, 0 FROM artist_masters WHERE role IN ('Main', 'Appearance', 'TrackAppearance')\
+                            UNION\
+                        SELECT release_artists.id_artist, MAX(IIF(date_added IS NULL, 0, 1))\
+                        FROM release_artists\
+                        INNER JOIN release\
+                            ON release.id_release = release_artists.id_release\
+                        LEFT JOIN collection_items\
+                            ON collection_items.id_release = release.id_release\
+                        GROUP BY release_artists.id_artist )\
                 GROUP BY id_artist"
         db_con = sqlite3.connect(self.db_file)
         df_vertices = pd.read_sql_query(sql=sql, con=db_con)
@@ -90,6 +100,7 @@ class Discogs:
         return df_vertices
 
     def __artist_edges(self) -> pd.DataFrame:
+        """Retrieve artist cooperations in order to determine where to stop discogs extraction"""
         sql = "SELECT DISTINCT id_artist_from, id_artist_to, relation_type\
                 FROM (  SELECT id_member AS id_artist_from, id_artist as id_artist_to, 'group_member' as relation_type\
                         FROM artist_members\
@@ -101,7 +112,13 @@ class Discogs:
                         LEFT JOIN artist_aliases b\
                             ON a.id_artist = b.id_alias AND\
                                 a.id_alias = b.id_artist\
-                        WHERE a.id_artist > b.id_artist OR b.id_artist IS NULL )\
+                        WHERE a.id_artist > b.id_artist OR b.id_artist IS NULL\
+                    UNION\
+                        SELECT a.id_artist, b.id_artist, 'co_appearance'\
+                        FROM release_artists a\
+                        INNER JOIN release_artists b\
+                            ON b.id_release = a.id_release\
+                        WHERE a.id_artist != b.id_artist )\
                 GROUP BY id_artist_from, id_artist_to, relation_type;"
         db_con = sqlite3.connect(self.db_file)
         df_edges = pd.read_sql_query(sql=sql, con=db_con)
@@ -109,6 +126,7 @@ class Discogs:
         return df_edges
 
     def __extract_artist_to_ignore(self) -> None:
+        """Define which artists to exclude from discogs extraction"""
         graph = ig.Graph.DataFrame(edges=self.__artist_edges(), directed=False, vertices=self.__artist_vertices())
         # Select relevant vertices
         vtx_collection = graph.vs.select(in_collection_eq=1)
@@ -139,7 +157,7 @@ class Discogs:
             for index, row in df_artists_new.iterrows():
                 artists.append(self.client.artist(id=row['id_artist']))
                 df_write_attempts = pd.concat([df_write_attempts, pd.DataFrame.from_records([{ 'id_artist': row['id_artist'], 'qty_attempts': 1 }])])
-                df_write_attempts = df_write_attempts.append({'id_artist': row['id_artist'], 'qty_attempts': 1}, ignore_index=True)
+                #df_write_attempts = df_write_attempts.append({'id_artist': row['id_artist'], 'qty_attempts': 1}, ignore_index=True)
             derive = _derive.Artists(artists=artists, db_file=self.db_file)
             derive.process_masters = False
             derive.process()
@@ -149,20 +167,15 @@ class Discogs:
             qty_artists_not_added = db_reader.qty_artists_not_added()
 
     def artist_set_attributes(self) -> None:
-        db_con = sqlite3.connect(self.db_file)
-        cursor = db_con.cursor()
-        sql_file = open("loading/sql/extract_artist_attributes.sql")
-        sql_as_string = sql_file.read()
-        cursor.executescript(sql_as_string)
+        """Add attributes to the artist table"""
+        self.execute_sql_file(file_name="loading/sql/extract_artist_attributes.sql")
 
     def extract_artist_edges(self) -> None:
-        db_con = sqlite3.connect(self.db_file)
-        cursor = db_con.cursor()
-        sql_file = open("loading/sql/extract_artist_relations.sql")
-        sql_as_string = sql_file.read()
-        cursor.executescript(sql_as_string)
+        """Extract artist edges from groups, members, aliases and release cooperation"""
+        self.execute_sql_file(file_name="loading/sql/extract_artist_relations.sql")
 
     def get_artist_graph(self) -> ig.Graph:
+        """Create a graph of artist cooperations"""
         artists = _db_reader.Artists(db_file=self.db_file)
         df_edges = artists.edges()
         df_vertices = artists.vertices()[['id_artist', 'name_artist', 'in_collection']]
@@ -225,11 +238,8 @@ class Discogs:
         return(df_data)
 
     def extract_community_dendrogram(self) -> None:
-        db_con = sqlite3.connect(self.db_file)
-        cursor = db_con.cursor()
-        sql_file = open("loading/sql/extract_community_dendrogram.sql")
-        sql_as_string = sql_file.read()
-        cursor.executescript(sql_as_string)
+        """Create a summary of the clustering hierarchy"""
+        self.execute_sql_file(file_name="loading/sql/extract_community_dendrogram.sql")
 
     def masters_from_artists(self) -> None:
         """Process master release information from artists"""

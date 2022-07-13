@@ -23,6 +23,14 @@ FROM (  SELECT id_member AS id_artist_from,
                 a.id_alias = b.id_artist
         WHERE a.id_artist > b.id_artist OR
             b.id_artist IS NULL
+    UNION
+        SELECT a.id_artist,
+            b.id_artist,
+            'co_appearance'
+        FROM release_artists a
+        INNER JOIN release_artists b
+        ON b.id_release = a.id_release
+        WHERE a.id_artist != b.id_artist
     )
 INNER JOIN artist a
     ON a.id_artist = id_artist_from

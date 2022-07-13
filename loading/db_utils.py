@@ -59,6 +59,13 @@ class DBStorage():
         cursor.execute(sql)
         cursor.close()
 
+    def execute_sql_file(self, file_name: str) -> None:
+        db_con = sqlite3.connect(self.db_file)
+        cursor = db_con.cursor()
+        sql_file = open(file_name)
+        sql_as_string = sql_file.read()
+        cursor.executescript(sql_as_string)
+
     def write_data(self, df: pd.DataFrame, name_table: str) -> None:
         """Write data to the database"""
         if not df.empty:
