@@ -30,10 +30,10 @@ class Discogs:
             with open(file_user_token) as file:
                 dict_token = yaml.load(file, Loader=yaml.FullLoader)
             has_token = 'token' in dict_token and 'secret' in dict_token
-        if not has_token:  
-            d = discogs_client.Client(user_agent='music_collection_api/1.0', 
-                                      consumer_key=self.consumer_key, 
-                                      consumer_secret=self.consumer_secret)   
+        if not has_token:
+            d = discogs_client.Client(user_agent='music_collection_api/1.0',
+                                      consumer_key=self.consumer_key,
+                                      consumer_secret=self.consumer_secret)
             url = d.get_authorize_url()
             print("Visit " + url[2] + " to allow the client to access")
             code_verify = input("Enter the verification code: ")
@@ -51,20 +51,18 @@ class Discogs:
 
     def start(self) -> None:
         """Starts user's collection processing"""
-        self.__collection_value()
-        self.__collection_items()
-        self.__artist_is_group()
-        self.__artist_thumbnail()
-        self.__artist_collection_items()
-        self.__extract_artist_edges()
-        self.__artists_from_collection()
-        
-    def __collection_value(self) -> None:
+        self.collection_value()
+        self.collection_items()
+        self.artist_set_attributes()
+        self.artists_from_collection()
+        self.extract_artist_edges()
+
+    def collection_value(self) -> None:
         """Process the user's collection value statistics"""
         derive = _derive.Collection(db_file=self.db_file)
         derive.value(self.client.identity())
 
-    def __collection_items(self) -> None:
+    def collection_items(self) -> None:
         """Process the user's collection items"""
         me = self.client.identity()
         db_writer = _db_writer.Collection(db_file=self.db_file)
@@ -74,7 +72,61 @@ class Discogs:
             derive = _derive.CollectionItem(item=item, db_file=self.db_file)
             derive.process()
 
-    def __artists_from_collection(self) -> None:
+    def __artist_vertices(self) -> pd.DataFrame:
+        sql = "SELECT id_artist, MAX(in_collection) AS in_collection\
+                FROM (  SELECT id_artist, IIF(qty_collection_items > 0, 1, 0) AS in_collection FROM artist\
+                            UNION\
+                        SELECT id_alias, 0 as in_collection from artist_aliases\
+                            UNION\
+                        SELECT id_member, 0 FROM artist_members\
+                            UNION\
+                        SELECT id_group, 0 FROM artist_groups\
+                            UNION\
+                        SELECT id_artist, 0 FROM artist_masters WHERE role IN ('Main', 'Appearance', 'TrackAppearance') )\
+                GROUP BY id_artist"
+        db_con = sqlite3.connect(self.db_file)
+        df_vertices = pd.read_sql_query(sql=sql, con=db_con)
+        db_con.close()
+        return df_vertices
+
+    def __artist_edges(self) -> pd.DataFrame:
+        sql = "SELECT DISTINCT id_artist_from, id_artist_to, relation_type\
+                FROM (  SELECT id_member AS id_artist_from, id_artist as id_artist_to, 'group_member' as relation_type\
+                        FROM artist_members\
+                    UNION\
+                        SELECT id_artist, id_group, 'group_member' FROM artist_groups\
+                    UNION\
+                        SELECT a.id_alias, a.id_artist, 'artist_alias'\
+                        FROM artist_aliases a\
+                        LEFT JOIN artist_aliases b\
+                            ON a.id_artist = b.id_alias AND\
+                                a.id_alias = b.id_artist\
+                        WHERE a.id_artist > b.id_artist OR b.id_artist IS NULL )\
+                GROUP BY id_artist_from, id_artist_to, relation_type;"
+        db_con = sqlite3.connect(self.db_file)
+        df_edges = pd.read_sql_query(sql=sql, con=db_con)
+        db_con.close()
+        return df_edges
+
+    def __extract_artist_to_ignore(self) -> None:
+        graph = ig.Graph.DataFrame(edges=self.__artist_edges(), directed=False, vertices=self.__artist_vertices())
+        # Select relevant vertices
+        vtx_collection = graph.vs.select(in_collection_eq=1)
+        vtx_relevant = []
+        for vtx in vtx_collection:
+            vtx_neighbors = graph.neighborhood(vertices=vtx, order=2)           # Only query those that have less than 3 steps
+            vtx_neighbors = list(set(vtx_neighbors))
+            vtx_relevant = list(set(vtx_neighbors + vtx_relevant))
+            vtx_connectors = graph.get_shortest_paths(vtx, to=vtx_collection)   # Vertices that connect artists in the collection
+            vtx_connectors = [x for l in vtx_connectors for x in l]
+            vtx_relevant = list(set(vtx_connectors + vtx_relevant))
+        # Get vertices to ignore
+        vtx_to_exclude = list(set(graph.vs.indices) - set(vtx_relevant))
+        df_ignore = pd.DataFrame({'id_artist': graph.vs[vtx_to_exclude]['name']})
+        db_writer = _db_writer.Artists(db_file=self.db_file)
+        db_writer.ignore_list(df_ignore=df_ignore)
+
+    def artists_from_collection(self) -> None:
         """Process artist information derived from groups and memberships"""
         db_reader = _db_reader.Collection(db_file=self.db_file)
         db_writer = _db_writer.Collection(db_file=self.db_file)
@@ -96,6 +148,89 @@ class Discogs:
             db_writer.artist_write_attempts(df_write_attempts=df_write_attempts)
             qty_artists_not_added = db_reader.qty_artists_not_added()
 
+    def artist_set_attributes(self) -> None:
+        db_con = sqlite3.connect(self.db_file)
+        cursor = db_con.cursor()
+        sql_file = open("loading/sql/extract_artist_attributes.sql")
+        sql_as_string = sql_file.read()
+        cursor.executescript(sql_as_string)
+
+    def extract_artist_edges(self) -> None:
+        db_con = sqlite3.connect(self.db_file)
+        cursor = db_con.cursor()
+        sql_file = open("loading/sql/extract_artist_relations.sql")
+        sql_as_string = sql_file.read()
+        cursor.executescript(sql_as_string)
+
+    def get_artist_graph(self) -> ig.Graph:
+        artists = _db_reader.Artists(db_file=self.db_file)
+        df_edges = artists.edges()
+        df_vertices = artists.vertices()[['id_artist', 'name_artist', 'in_collection']]
+        graph = ig.Graph.DataFrame(edges=df_edges, directed=False, vertices=df_vertices)
+        vtx_collection = graph.vs.select(in_collection_eq=1)
+        vtx_connectors_all = []
+        for vtx in vtx_collection:
+            # Only query those that have less than 3 steps
+            vtx_neighbors = graph.neighborhood(vertices=vtx, order=2)
+            vtx_neighbors = list(set(vtx_neighbors))
+            vtx_connectors_all = list(set(vtx_neighbors + vtx_connectors_all))
+            # Integrate connectors
+            vtx_connectors = graph.get_shortest_paths(vtx, to=vtx_collection)
+            vtx_connectors = [x for l in vtx_connectors for x in l]
+            vtx_connectors_all = list(set(vtx_connectors + vtx_connectors_all))
+        vtx_to_exclude = list(set(graph.vs.indices) - set(vtx_connectors_all))
+        graph.delete_vertices(vtx_to_exclude)
+        return graph
+
+    def cluster_component(self, graph_component: ig.Graph) -> pd.DataFrame:
+        # Queue for processing graphs, keeping track level in community tree and relationships between branches
+        lst_processing_queue = [{'graph': graph_component, 'tree_level': 0}]
+        # For each sub graph until none in the list
+        qty_graphs_queued = len(lst_processing_queue)   # Number of graphs in the community tree
+        lst_cluster_data = []                           # Data-frames with data for a processed graph
+        idx_community_start = 0
+        while qty_graphs_queued > 0:
+            dict_queue = lst_processing_queue.pop(0)
+            graph = (dict_queue.get('graph')).simplify()  # Remove self referential and double links
+            tree_level = dict_queue.get('tree_level')
+            qty_collection_items = sum(graph.vs['in_collection'])
+            qty_vertices = len(graph.vs)
+            if qty_collection_items > 2:    # Only determine communities if the number of vertices is higher than x
+                cluster_hierarchy = graph.community_fastgreedy()    # communities
+                # Setting maximum and minimum of number of clusters
+                qty_clusters = 15 if cluster_hierarchy.optimal_count > 15 else cluster_hierarchy.optimal_count
+                qty_clusters = qty_clusters if qty_clusters > 2 else 2
+                cluster_communities = cluster_hierarchy.as_clustering(n=qty_clusters)   # Determine communities
+                community_membership = cluster_communities.membership
+                communities = set(community_membership)
+                eigenvalue = []
+                for community in communities:
+                    graph_sub = cluster_communities.subgraph(community)
+                    graph_sub.vs['id_community_from'] = [community + (idx_community_start + 1)] * len(graph_sub.vs)
+                    lst_processing_queue.append({'graph': graph_sub.copy(), 'tree_level': tree_level + 1})
+                    eigenvalue = eigenvalue + graph_sub.eigenvector_centrality(directed=False)  # Calculate eigenvalue per sub_graph
+                # Make sure community numbers are unique
+                community_membership = [i + (idx_community_start + 1) for i in community_membership]
+                idx_community_start = max(community_membership)
+                df_cluster_data = pd.DataFrame({'id_artist': graph.vs['name'],
+                                                'name_artist': graph.vs['name_artist'],
+                                                'in_collection': graph.vs['in_collection'],
+                                                'id_hierarchy': [tree_level] * qty_vertices,
+                                                'id_community_from': graph.vs['id_community_from'],
+                                                'id_community': community_membership,
+                                                'eigenvalue': eigenvalue})
+                lst_cluster_data.append(df_cluster_data)
+            qty_graphs_queued = len(lst_processing_queue)
+        df_data = pd.concat(lst_cluster_data, axis=0, ignore_index=True)
+        return(df_data)
+
+    def extract_community_dendrogram(self) -> None:
+        db_con = sqlite3.connect(self.db_file)
+        cursor = db_con.cursor()
+        sql_file = open("loading/sql/extract_community_dendrogram.sql")
+        sql_as_string = sql_file.read()
+        cursor.executescript(sql_as_string)
+
     def masters_from_artists(self) -> None:
         """Process master release information from artists"""
         db_reader = _db_reader.Artists(db_file=self.db_file)
@@ -105,103 +240,3 @@ class Discogs:
             artists.append(self.client.artist(id=row['id_artist']))
         derive = _derive.Artists(artists=artists)
         derive.process_masters()
-
-    def __artist_is_group(self) -> None:
-        sql = "UPDATE artist SET is_group = (SELECT 1 FROM artist_members WHERE id_artist = artist.id_artist)"
-        db_con = sqlite3.connect(self.db_file)
-        cursor = db_con.cursor()
-        cursor.execute(sql)
-        db_con.close()
-
-    def __artist_thumbnail(self) -> None:
-        sql = "UPDATE artist\
-                SET url_thumbnail = (\
-                    SELECT url_thumbnail FROM (\
-                        SELECT id_alias AS id_artist, url_thumbnail FROM artist_aliases\
-                        UNION\
-                    SELECT id_member, url_thumbnail FROM artist_members\
-                        UNION\
-                        SELECT id_group, url_thumbnail FROM artist_groups\
-                    ) WHERE id_artist = artist.id_artist )"
-        db_con = sqlite3.connect(self.db_file)
-        cursor = db_con.cursor()
-        cursor.execute(sql)
-        db_con.close()
-
-    def __artist_collection_items(self) -> None:
-        sql = "UPDATE artist\
-            SET qty_collection_items = (SELECT COUNT(*)\
-                        FROM collection_items\
-                        INNER JOIN release_artists\
-                            ON release_artists.id_release = collection_items.id_release\
-                        WHERE  release_artists.id_artist = artist.id_artist)"
-        db_con = sqlite3.connect(self.db_file)
-        cursor = db_con.cursor()
-        cursor.execute(sql)
-        db_con.close()
-
-    def __extract_artist_edges(self) -> None:
-        db_con = sqlite3.connect(self.db_file)
-        cursor = db_con.cursor()
-        sql_file = open("loading/sql/extract_artist_relations.sql")
-        sql_as_string = sql_file.read()
-        cursor.executescript(sql_as_string)
-
-    def __artist_vertices(self) -> pd.DataFrame:
-        sql = "SELECT id_artist, MAX(in_collection) AS in_collection\
-                FROM (\
-                    SELECT id_artist, IIF(qty_collection_items > 0, 1, 0) AS in_collection FROM artist\
-                    UNION\
-                    SELECT id_alias, 0 as in_collection from artist_aliases\
-                    UNION\
-                    SELECT id_member, 0 FROM artist_members\
-                    UNION\
-                    SELECT id_group, 0 FROM artist_groups\
-                    UNION\
-                    SELECT id_artist, 0 FROM artist_masters WHERE role IN ('Main', 'Appearance', 'TrackAppearance')\
-                )\
-                GROUP BY id_artist"
-        db_con = sqlite3.connect(self.db_file)
-        df_vertices = pd.read_sql_query(sql=sql, con=db_con)
-        db_con.close() 
-        return df_vertices
-
-    def __artist_edges(self) -> pd.DataFrame:
-        sql = "SELECT DISTINCT id_artist_from, id_artist_to, relation_type\
-                FROM (\
-                        SELECT id_member AS id_artist_from, id_artist as id_artist_to, 'group_member' as relation_type\
-                        FROM artist_members\
-                    UNION\
-                        SELECT id_artist, id_group, 'group_member' FROM artist_groups\
-                    UNION\
-                        SELECT a.id_alias, a.id_artist, 'artist_alias'\
-                        FROM artist_aliases a\
-                        LEFT JOIN artist_aliases b\
-                            ON a.id_artist = b.id_alias AND\
-                                a.id_alias = b.id_artist\
-                        WHERE a.id_artist > b.id_artist OR b.id_artist IS NULL\
-                    )\
-                GROUP BY id_artist_from, id_artist_to, relation_type;"
-        db_con = sqlite3.connect(self.db_file)
-        df_edges = pd.read_sql_query(sql=sql, con=db_con)
-        db_con.close() 
-        return df_edges       
-        
-    def __extract_artist_to_ignore(self) -> None:
-        graph = ig.Graph.DataFrame(edges=self.__artist_edges(), directed=False, 
-                                    vertices=self.__artist_vertices())
-        # Select relevant vertices
-        vtx_collection = graph.vs.select(in_collection_eq=1)
-        vtx_relevant = []
-        for vtx in vtx_collection:
-            vtx_neighbors = graph.neighborhood(vertices=vtx, order=2)           # Only query those that have less than 3 steps
-            vtx_neighbors = list(set(vtx_neighbors))
-            vtx_relevant = list(set(vtx_neighbors + vtx_relevant))
-            vtx_connectors = graph.get_shortest_paths(vtx, to=vtx_collection)   # Vertices that connect artists in the collection
-            vtx_connectors = [x for l in vtx_connectors for x in l]
-            vtx_relevant = list(set(vtx_connectors + vtx_relevant))
-        # Get vertices to ignore
-        vtx_to_exclude = list(set(graph.vs.indices) - set(vtx_relevant))
-        df_ignore = pd.DataFrame({'id_artist': graph.vs[vtx_to_exclude]['name']})
-        db_writer = _db_writer.Artists(db_file=self.db_file)
-        db_writer.ignore_list(df_ignore=df_ignore)
