@@ -21,7 +21,7 @@ class Collection(_db_utils.DBStorage):
         sql_file = open("loading/sql/views_collection.sql")
         sql_as_string = sql_file.read()
         cursor.executescript(sql_as_string)
-        
+
     def create_table_artist_write_attempts(self) -> None:
         if not self.table_exists('artist_write_attempts'):
             db_con = sqlite3.connect(self.db_file)
@@ -40,20 +40,20 @@ class Collection(_db_utils.DBStorage):
         self.store_append(df=df_artists, name_table='collection_artists')
 
     def formats(self, df_formats: pd.DataFrame) -> None:
-        if df_formats.shape[0] > 0: 
+        if df_formats.shape[0] > 0:
             self.store_append(df=df_formats, name_table='collection_formats')
 
     def labels(self, df_labels: pd.DataFrame) -> None:
-        if df_labels.shape[0] > 0: 
+        if df_labels.shape[0] > 0:
             self.store_append(df=df_labels, name_table='collection_labels')
 
     def genres(self, df_genres: pd.DataFrame) -> None:
-        if df_genres.shape[0] > 0: 
-            self.store_append(df=df_genres, name_table='collection_genres')  
+        if df_genres.shape[0] > 0:
+            self.store_append(df=df_genres, name_table='collection_genres')
 
     def styles(self, df_styles: pd.DataFrame) -> None:
         if df_styles.shape[0] > 0:
-            self.store_append(df=df_styles, name_table='collection_styles')    
+            self.store_append(df=df_styles, name_table='collection_styles')
 
     def artist_write_attempts(self, df_write_attempts: pd.DataFrame) -> None:
         if df_write_attempts.shape[0] > 0:
@@ -64,14 +64,14 @@ class Artists(_db_utils.DBStorage):
     """
     def __init__(self, db_file) -> None:
         super().__init__(db_file)
-        
+
     def in_db(self, id_artist: int) -> bool:
         """Checks whether the artist is already in the database"""
         if self.table_exists(name_table='artist'):
             db_con = sqlite3.connect(self.db_file)
             cursor = db_con.cursor()
             cursor.execute("SELECT count(*) FROM artist WHERE id_artist=" + str(id_artist) + "")
-            does_exist = cursor.fetchone()[0] > 0 
+            does_exist = cursor.fetchone()[0] > 0
         else:
             does_exist = False
         return does_exist
@@ -130,7 +130,7 @@ class Artists(_db_utils.DBStorage):
     def urls(self, df_urls: pd.DataFrame) -> None:
         """Store the artist's url(s)"""
         self.write_data(df=df_urls, name_table='artist_urls')
-        
+
     def ignore_list(self, df_ignore: pd.DataFrame) -> None:
         """Store artist id's that should be ignored for further processing"""
         self.store_replace(df=df_ignore, name_table='artist_ignore')
@@ -146,11 +146,11 @@ class Master(_db_utils.DBStorage):
             db_con = sqlite3.connect(self.db_file)
             cursor = db_con.cursor()
             cursor.execute("SELECT count(*) FROM master WHERE id_master=" + str(id_master) + "")
-            does_exist = cursor.fetchone()[0] > 0 
+            does_exist = cursor.fetchone()[0] > 0
         else:
             does_exist = False
-        return does_exist    
- 
+        return does_exist
+
     def master(self, df_master: pd.DataFrame) -> None:
         """Store the master"""
         if df_master.shape[0] > 0:
@@ -158,28 +158,28 @@ class Master(_db_utils.DBStorage):
 
     def genres(self, df_genres: pd.DataFrame) -> None:
         """Store the master's genre(s)"""
-        if df_genres.shape[0] > 0: 
-            self.store_append(df=df_genres, name_table='master_genres')  
+        if df_genres.shape[0] > 0:
+            self.store_append(df=df_genres, name_table='master_genres')
 
     def styles(self, df_styles: pd.DataFrame) -> None:
         """Store the master's style(s)"""
         if df_styles.shape[0] > 0:
-            self.store_append(df=df_styles, name_table='master_styles')    
+            self.store_append(df=df_styles, name_table='master_styles')
 
     def videos(self, df_videos: pd.DataFrame) -> None:
         """Store the master's video(s)"""
         if df_videos.shape[0] > 0:
-            self.store_append(df=df_videos, name_table='master_videos') 
+            self.store_append(df=df_videos, name_table='master_videos')
 
     def tracks(self, df_tracks: pd.DataFrame) -> None:
         """Store the master's track(s)"""
         if df_tracks.shape[0] > 0:
-            self.store_append(df=df_tracks, name_table='master_tracks') 
-        
+            self.store_append(df=df_tracks, name_table='master_tracks')
+
     def track_artist(self, df_artists: pd.DataFrame) -> None:
         """Store the master's track artist(s)"""
-        if df_artists.shape[0] > 0: 
-            self.store_append(df=df_artists, name_table='master_track_artists')    
+        if df_artists.shape[0] > 0:
+            self.store_append(df=df_artists, name_table='master_track_artists')
 
     def stats(self, df_stats: pd.DataFrame) -> None:
         """Store the master's marketplace statistics"""
@@ -197,10 +197,10 @@ class Release(_db_utils.DBStorage):
             db_con = sqlite3.connect(self.db_file)
             cursor = db_con.cursor()
             cursor.execute("SELECT count(*) FROM release WHERE id_release=" + str(id_release) + "")
-            does_exist = cursor.fetchone()[0] > 0 
+            does_exist = cursor.fetchone()[0] > 0
         else:
             does_exist = False
-        return does_exist    
+        return does_exist
 
     def release(self, df_release: pd.DataFrame) -> None:
         """Store the release"""
@@ -219,38 +219,38 @@ class Release(_db_utils.DBStorage):
 
     def formats(self, df_formats: pd.DataFrame) -> None:
         """Store the release's format(s)"""
-        if df_formats.shape[0] > 0: 
+        if df_formats.shape[0] > 0:
             self.store_append(df=df_formats, name_table='release_formats')
 
     def labels(self, df_labels: pd.DataFrame) -> None:
         """Store the release's label(s)"""
-        if df_labels.shape[0] > 0: 
+        if df_labels.shape[0] > 0:
             self.store_append(df=df_labels, name_table='release_labels')
 
     def genres(self, df_genres: pd.DataFrame) -> None:
         """Store the release's genre(s)"""
-        if df_genres.shape[0] > 0: 
-            self.store_append(df=df_genres, name_table='release_genres')  
+        if df_genres.shape[0] > 0:
+            self.store_append(df=df_genres, name_table='release_genres')
 
     def styles(self, df_styles: pd.DataFrame) -> None:
         """Store the release's style(s)"""
         if df_styles.shape[0] > 0:
-            self.store_append(df=df_styles, name_table='release_styles')    
+            self.store_append(df=df_styles, name_table='release_styles')
 
     def videos(self, df_videos: pd.DataFrame) -> None:
         """Store the release's video(s)"""
         if df_videos.shape[0] > 0:
-            self.store_append(df=df_videos, name_table='release_videos') 
+            self.store_append(df=df_videos, name_table='release_videos')
 
     def tracks(self, df_tracks: pd.DataFrame) -> None:
         """Store the release's track(s)"""
         if df_tracks.shape[0] > 0:
-            self.store_append(df=df_tracks, name_table='release_tracks') 
+            self.store_append(df=df_tracks, name_table='release_tracks')
 
     def track_artist(self, df_artists: pd.DataFrame) -> None:
         """Store the release's track artist(s)"""
-        if df_artists.shape[0] > 0: 
-            self.store_append(df=df_artists, name_table='release_track_artists')    
+        if df_artists.shape[0] > 0:
+            self.store_append(df=df_artists, name_table='release_track_artists')
 
     def stats(self, df_stats: pd.DataFrame) -> None:
         """Store the release's marketplace statistics"""
@@ -268,7 +268,7 @@ class ArtistNetwork(_db_utils.DBStorage):
     def edges(self, df_edges: pd.DataFrame) -> None:
         pass
 
-    def cluster_hierarchy(self, df_hierarchy: pd.DataFrame) -> None:
+    def community_hierarchy(self, df_hierarchy: pd.DataFrame) -> None:
         if df_hierarchy.shape[0] > 0:
             self.drop_existing_table(name_table='artist_community_hierarchy')
             self.store_append(df=df_hierarchy, name_table='artist_community_hierarchy')
