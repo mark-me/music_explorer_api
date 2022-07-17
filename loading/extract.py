@@ -52,9 +52,9 @@ class Discogs(_db_utils.DBStorage):
 
     def start(self) -> None:
         """Starts user's collection processing"""
-        #self.collection_value()
-        #self.collection_items()
-        #self.artist_set_attributes()
+        self.collection_value()
+        self.collection_items()
+        self.artist_set_attributes()
         self.artists_from_collection()
         self.extract_artist_edges()
 
