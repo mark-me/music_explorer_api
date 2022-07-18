@@ -14,7 +14,7 @@ CREATE TEMPORARY TABLE thumbnails AS
         SELECT id_group, url_thumbnail FROM artist_groups;
 
 UPDATE artist
-SET url_thumbnail = ( SELECT thumbnails WHERE id_artist = artist.id_artist );
+SET url_thumbnail = ( SELECT url_thumbnail WHERE id_artist = artist.id_artist );
 
 -- Number of collection items
 CREATE TEMPORARY TABLE qty_collection_items AS
