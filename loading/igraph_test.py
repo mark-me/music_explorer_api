@@ -52,8 +52,6 @@ class Database(_db_utils.DBStorage):
         lst_components = graph_all.decompose()  # Decompose graph
         lst_dendrogram = []
         for component in lst_components:
-            print("In collection: " + str(sum(component.vs['in_collection'])) + " - " +
-                  "Artists: " + str(len(component.vs)))
             if sum(component.vs['in_collection']) <= 2:
                 qty_vertices = len(component.vs)
                 df_dendrogram = pd.DataFrame({'id_artist': component.vs['name'],
@@ -61,25 +59,27 @@ class Database(_db_utils.DBStorage):
                                             'in_collection': component.vs['in_collection'],
                                             'id_hierarchy': [0] * qty_vertices,
                                             'id_community_from': [0] * qty_vertices,
-                                            'id_community': [i + 1 for i in range(qty_vertices)],
+                                            'id_community': [1] * qty_vertices, #[i + 1 for i in range(qty_vertices)],
                                             'eigenvalue': component.eigenvector_centrality(directed=False)})
             else:
                 df_dendrogram = self.__cluster_component(component)
             lst_dendrogram.append(df_dendrogram)
         # Making all community id's unique and add root to connect to components
         community_max = 0
-        lst_roots = []
         for i in range(len(lst_dendrogram)):
-            lst_dendrogram[i]['id_hierarchy'] = lst_dendrogram[i]['id_hierarchy'] + 1
-            lst_dendrogram[i]['id_community'] = lst_dendrogram[i]['id_community'] + community_max + 1
-            lst_dendrogram[i]['id_community_from'] = lst_dendrogram[i]['id_community_from'] + community_max + 1
-            community_max = max(lst_dendrogram[i]['id_community'])
-            df_root = lst_dendrogram[i][lst_dendrogram[i]['id_hierarchy'] == 1]
-            df_root['id_hierarchy'] = 0
-            df_root['id_community'] = df_root['id_community_from']
-            df_root['id_community_from'] = 0
-            lst_roots.append(df_root)
-        lst_dendrogram = lst_roots + lst_dendrogram
+            # Make communities unique across the dendrograms
+            df_component = lst_dendrogram[i]
+            df_component['id_community'] = df_component['id_community'] + community_max + 1
+            if len(set(df_component['id_community_from'])) > 1:
+                print("Add extra node as root")
+                df_component.loc[:, 'id_community_from'] = df_component.loc[:, 'id_community_from'] + community_max + 1
+                df_root = df_component.loc[df_component['id_hierarchy'] == 0].copy()
+                df_root['id_community'] = df_root['id_community_from']
+                df_root['id_community_from'] = 0
+                df_component.loc[:, 'id_hierarchy'] = df_component.loc[:, 'id_hierarchy'] + 1
+                df_component = pd.concat([df_component, df_root],axis=0, ignore_index=True)
+            community_max = max(df_component['id_community'])
+            lst_dendrogram[i] = df_component
         df_hierarchy = pd.concat(lst_dendrogram, axis=0, ignore_index=True)
         db_writer = _db_writer.ArtistNetwork(db_file=self.db_file)
         db_writer.community_hierarchy(df_hierarchy=df_hierarchy)

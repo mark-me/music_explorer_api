@@ -1,4 +1,4 @@
-/* Create community vertices 
+/* Create community vertices
 */
 CREATE TEMPORARY TABLE collection_ranked_eigenvalue AS
     SELECT id_community,
@@ -8,7 +8,7 @@ CREATE TEMPORARY TABLE collection_ranked_eigenvalue AS
     WHERE in_collection = 1;
 
 CREATE TEMPORARY TABLE collection_community_label AS
-    SELECT id_community, 
+    SELECT id_community,
         GROUP_CONCAT(name_artist) AS label_community_collection
     FROM collection_ranked_eigenvalue
     WHERE rank_eigenvalue <= 3
@@ -21,7 +21,7 @@ CREATE TEMPORARY TABLE ranked_eigenvalue AS
     FROM artist_community_hierarchy;
 
 CREATE TEMPORARY TABLE community_label AS
-    SELECT id_community, 
+    SELECT id_community,
         GROUP_CONCAT(name_artist) AS label_community
     FROM ranked_eigenvalue
     WHERE rank_eigenvalue <= 3
@@ -31,7 +31,7 @@ DROP TABLE IF EXISTS community_dendrogram_vertices;
 
 CREATE TABLE community_dendrogram_vertices AS
     SELECT a.id_community,
-        id_hierarchy + 1 AS id_hierarchy,
+        id_hierarchy AS id_hierarchy,
         label_community,
         label_community_collection,
         SUM(in_collection) AS qty_artists_collection,
@@ -53,18 +53,18 @@ CREATE TABLE community_dendrogram_vertices AS
     LEFT JOIN community_label  b
         ON b.id_community = a.id_community
     LEFT JOIN collection_community_label c
-        ON c.id_community = a.id_community        
+        ON c.id_community = a.id_community
     WHERE a.id_hierarchy = 0;
 
-/* Create community edges 
+/* Create community edges
 */
 DROP TABLE IF EXISTS community_dendrogram_edges;
 
 CREATE TABLE community_dendrogram_edges AS
-    SELECT id_community_from as id_from, 
-        id_community as id_to, id_hierarchy, 
+    SELECT id_community_from as id_from,
+        id_community as id_to, id_hierarchy,
         MAX(in_collection) AS to_collection_artists
     FROM artist_community_hierarchy
-    GROUP BY id_community_from, 
-        id_community, 
+    GROUP BY id_community_from,
+        id_community,
         id_hierarchy;
