@@ -57,6 +57,7 @@ class Discogs(_db_utils.DBStorage):
         self.artist_set_attributes()
         self.artists_from_collection()
         self.extract_artist_edges()
+        self.create_clusters()
 
     def collection_value(self) -> None:
         """Process the user's collection value statistics"""
@@ -174,11 +175,10 @@ class Discogs(_db_utils.DBStorage):
         """Extract artist edges from groups, members, aliases and release cooperation"""
         self.execute_sql_file(file_name="loading/sql/extract_artist_relations.sql")
 
-    def get_artist_graph(self) -> ig.Graph:
-        """Create a graph of artist cooperations"""
+    def __get_artist_graph(self) -> ig.Graph:
         artists = _db_reader.Artists(db_file=self.db_file)
         df_edges = artists.edges()
-        df_vertices = artists.vertices()[['id_artist', 'name_artist', 'in_collection']]
+        df_vertices = artists.vertices()[['id_artist', 'name_artist', 'in_collection', 'qty_collection_items']]
         graph = ig.Graph.DataFrame(edges=df_edges, directed=False, vertices=df_vertices)
         vtx_collection = graph.vs.select(in_collection_eq=1)
         vtx_connectors_all = []
@@ -195,19 +195,19 @@ class Discogs(_db_utils.DBStorage):
         graph.delete_vertices(vtx_to_exclude)
         return graph
 
-    def cluster_component(self, graph_component: ig.Graph) -> pd.DataFrame:
+    def __cluster_component(self, graph_component: ig.Graph) -> pd.DataFrame:
+        idx_community_start = 0
+        graph_component.vs['id_community_from'] = idx_community_start
         # Queue for processing graphs, keeping track level in community tree and relationships between branches
         lst_processing_queue = [{'graph': graph_component, 'tree_level': 0}]
         # For each sub graph until none in the list
         qty_graphs_queued = len(lst_processing_queue)   # Number of graphs in the community tree
-        lst_cluster_data = []                           # Data-frames with data for a processed graph
-        idx_community_start = 0
+        lst_communities = []                           # Data-frames with data for a processed graph
         while qty_graphs_queued > 0:
             dict_queue = lst_processing_queue.pop(0)
             graph = (dict_queue.get('graph')).simplify()  # Remove self referential and double links
             tree_level = dict_queue.get('tree_level')
             qty_collection_items = sum(graph.vs['in_collection'])
-            qty_vertices = len(graph.vs)
             if qty_collection_items > 2:    # Only determine communities if the number of vertices is higher than x
                 cluster_hierarchy = graph.community_fastgreedy()    # communities
                 # Setting maximum and minimum of number of clusters
@@ -225,21 +225,55 @@ class Discogs(_db_utils.DBStorage):
                 # Make sure community numbers are unique
                 community_membership = [i + (idx_community_start + 1) for i in community_membership]
                 idx_community_start = max(community_membership)
-                df_cluster_data = pd.DataFrame({'id_artist': graph.vs['name'],
-                                                'name_artist': graph.vs['name_artist'],
-                                                'in_collection': graph.vs['in_collection'],
-                                                'id_hierarchy': [tree_level] * qty_vertices,
-                                                'id_community_from': graph.vs['id_community_from'],
-                                                'id_community': community_membership,
-                                                'eigenvalue': eigenvalue})
-                lst_cluster_data.append(df_cluster_data)
+                lst_communities.append(pd.DataFrame({'id_artist': graph.vs['name'],
+                                                    'name_artist': graph.vs['name_artist'],
+                                                    'in_collection': graph.vs['in_collection'],
+                                                    'qty_collection_items': graph.vs['qty_collection_items'],
+                                                    'id_hierarchy': [tree_level] * len(graph.vs),
+                                                    'id_community_from': graph.vs['id_community_from'],
+                                                    'id_community': community_membership,
+                                                    'eigenvalue': eigenvalue}))
             qty_graphs_queued = len(lst_processing_queue)
-        df_data = pd.concat(lst_cluster_data, axis=0, ignore_index=True)
-        return(df_data)
+        return(pd.concat(lst_communities, axis=0, ignore_index=True))
 
-    def extract_community_dendrogram(self) -> None:
-        """Create a summary of the clustering hierarchy"""
-        self.execute_sql_file(file_name="loading/sql/extract_community_dendrogram.sql")
+    def create_clusters(self) -> None:
+        graph_all = self.__get_artist_graph()
+        # Cluster all components
+        lst_components = graph_all.decompose()  # Decompose graph
+        lst_dendrogram = []
+        for component in lst_components:
+            if sum(component.vs['in_collection']) <= 2:
+                qty_vertices = len(component.vs)
+                df_dendrogram = pd.DataFrame({'id_artist': component.vs['name'],
+                                            'name_artist': component.vs['name_artist'],
+                                            'in_collection': component.vs['in_collection'],
+                                            'qty_collection_items': component.vs['qty_collection_items'],
+                                            'id_hierarchy': [0] * qty_vertices,
+                                            'id_community_from': [0] * qty_vertices,
+                                            'id_community': [1] * qty_vertices,
+                                            'eigenvalue': component.eigenvector_centrality(directed=False)})
+            else:
+                df_dendrogram = self.__cluster_component(component)
+            lst_dendrogram.append(df_dendrogram)
+        # Making all community id's unique across the dendrograms and add root to connect to components
+        community_max = 0
+        for i in range(len(lst_dendrogram)):
+            df_component = lst_dendrogram[i]
+            df_component['id_community'] = df_component['id_community'] + community_max + 1
+            # If a component has multiple sub communities add an extra vertex so they will not be added to the root directly
+            if len(set(df_component['id_community_from'])) > 1:
+                df_component.loc[:, 'id_community_from'] = df_component.loc[:, 'id_community_from'] + community_max + 1
+                df_root = df_component.loc[df_component['id_hierarchy'] == 0].copy()
+                df_root['id_community'] = df_root['id_community_from']
+                df_root['id_community_from'] = 0
+                df_component.loc[:, 'id_hierarchy'] = df_component.loc[:, 'id_hierarchy'] + 1
+                df_component = pd.concat([df_component, df_root],axis=0, ignore_index=True)
+            community_max = max(df_component['id_community'])
+            lst_dendrogram[i] = df_component
+        df_hierarchy = pd.concat(lst_dendrogram, axis=0, ignore_index=True)
+        db_writer = _db_writer.ArtistNetwork(db_file=self.db_file)
+        db_writer.community_hierarchy(df_hierarchy=df_hierarchy)
+        self.execute_sql_file(file_name="loading/sql/extract_community_dendrogram.sql") # Create a summary of the clustering hierarchy
 
     def masters_from_artists(self) -> None:
         """Process master release information from artists"""

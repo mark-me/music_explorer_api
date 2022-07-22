@@ -60,7 +60,7 @@ class Database(_db_utils.DBStorage):
                                             'qty_collection_items': component.vs['qty_collection_items'],
                                             'id_hierarchy': [0] * qty_vertices,
                                             'id_community_from': [0] * qty_vertices,
-                                            'id_community': [1] * qty_vertices, #[i + 1 for i in range(qty_vertices)],
+                                            'id_community': [1] * qty_vertices,
                                             'eigenvalue': component.eigenvector_centrality(directed=False)})
             else:
                 df_dendrogram = self.__cluster_component(component)
