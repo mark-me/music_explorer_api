@@ -154,7 +154,7 @@ def plot_interactive(db_file: str) -> None:
 
 # Create overall graph
 db = Database(db_file=db_file)
-db.extract_artist_edges()
-db.create_clusters()
+# db.extract_artist_edges()
+# db.create_clusters()
 db.extract_community_dendrogram()
 plot_interactive(db_file=db_file)

@@ -29,8 +29,19 @@ FROM (  SELECT id_member AS id_artist_from,
             'co_appearance'
         FROM release_artists a
         INNER JOIN release_artists b
-        ON b.id_release = a.id_release
+            ON b.id_release = a.id_release
         WHERE a.id_artist != b.id_artist
+    UNION
+        SELECT a.id_artist,
+            b.id_artist,
+            'release_role'
+        FROM release_artists a
+        INNER JOIN release_credits b
+            ON b.id_release = a.id_release
+        INNER JOIN role c
+            ON c.role = b.role
+        WHERE a.id_artist = b.id_artist AND
+            as_edges = 1
     )
 INNER JOIN artist a
     ON a.id_artist = id_artist_from
