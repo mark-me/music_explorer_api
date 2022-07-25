@@ -23,3 +23,19 @@ class ReleaseVideo(_pydantic.BaseModel):
     id_release: int
     title: str
     url_video: str
+
+
+class DendrogramVertex(_pydantic.BaseModel):
+    id_community: int
+    id_hierarchy: int
+    label_community: str
+    label_community_collection: str
+    qty_artists_collection: int
+    qty_artists: int
+
+
+class DendrogramEdge(_pydantic.BaseModel):
+    id_from: int
+    id_to: int
+    id_hierarchy: int
+    to_collection_artists: int

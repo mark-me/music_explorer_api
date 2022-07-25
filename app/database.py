@@ -22,7 +22,7 @@ Base = _declarative.declarative_base()
 class _BaseViewCreator:
     def __init__(self, db_file: str) -> None:
         self.db_file = db_file
-    
+
     def create(self, name_view:str, sql_definition: str) -> None:
         db_con = sqlite3.connect(self.db_file)
         cursor = db_con.cursor()
@@ -30,7 +30,7 @@ class _BaseViewCreator:
         cursor.execute(sql)
         db_con.commit()
         db_con.close()
-    
+
     def drop(self, name_view: str) -> None:
         db_con = sqlite3.connect(self.db_file)
         cursor = db_con.cursor()
@@ -41,7 +41,7 @@ class _BaseViewCreator:
 class ViewCollection(_BaseViewCreator):
     def __init__(self, db_file: str) -> None:
         super().__init__(db_file=db_file)
-    
+
     def artists_in_collection(self) -> None:
         name_view = 'vw_artists_qty_in_collection'
         self.drop(name_view=name_view)
@@ -59,7 +59,7 @@ class ViewCollection(_BaseViewCreator):
             GROUP BY artist.id_artist, name_artist, artist_images.url_image\
             ORDER BY COUNT(*) DESC"
         self.create(name_view=name_view, sql_definition=sql_definition)
-        
+
     def artist_collection_items(self) -> None:
         name_view = 'vw_artist_collection_releases'
         self.drop(name_view=name_view)
@@ -78,8 +78,18 @@ class ViewCollection(_BaseViewCreator):
 class Artist(_BaseViewCreator):
     def __init__(self, db_file: str) -> None:
         super().__init__(db_file=db_file)
-        
-        
+
+
 class Release(_BaseViewCreator):
+    def __init__(self, db_file: str) -> None:
+        super().__init__(db_file=db_file)
+
+
+class DendrogramVertices(_BaseViewCreator):
+    def __init__(self, db_file: str) -> None:
+        super().__init__(db_file=db_file)
+
+
+class DendrogramEdges(_BaseViewCreator):
     def __init__(self, db_file: str) -> None:
         super().__init__(db_file=db_file)

@@ -47,7 +47,22 @@ def read_release_videos(
     release_videos = _services.get_release_videos(db=db, id_release=id_release)
     return release_videos
 
+@app.post("/dendro_vertices/{id_hierarchy}")
+def read_dendrogram_vertices(
+    id_hierarchy: int,
+    db: _orm.Session=_fastapi.Depends(_services.get_db),
+    ):
+    dendrogram_vertices = _services.get_dendrogram_vertices(db=db, id_hierarchy=id_hierarchy)
+    return dendrogram_vertices
+
+@app.post("/dendro_edges/{id_hierarchy}")
+def read_dendrogram_edges(
+    id_hierarchy: int,
+    db: _orm.Session=_fastapi.Depends(_services.get_db),
+    ):
+    dendrogram_edges = _services.get_dendrogram_edges(db=db, id_hierarchy=id_hierarchy)
+    return dendrogram_edges
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
-    

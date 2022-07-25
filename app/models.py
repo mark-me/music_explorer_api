@@ -29,3 +29,23 @@ class ReleaseVideo(_database.Base):
     id_release = _sql.Column(_sql.Integer, primary_key=True)
     title = _sql.Column(_sql.String)
     url_video = _sql.Column(_sql.String, primary_key=True)
+
+
+class DendrogramVertices(_database.Base):
+    __tablename__ = "community_dendrogram_vertices"
+
+    id_community = _sql.Column(_sql.Integer, primary_key=True)
+    id_hierarchy = _sql.Column(_sql.Integer)
+    label_community = _sql.Column(_sql.String)
+    label_community_collection = _sql.Column(_sql.String)
+    qty_artists_collection = _sql.Column(_sql.Integer)
+    qty_artists = _sql.Column(_sql.Integer)
+
+
+class DendrogramEdges(_database.Base):
+    __tablename__ = "community_dendrogram_edges"
+
+    id_from = _sql.Column(_sql.Integer, primary_key=True)
+    id_to = _sql.Column(_sql.Integer, primary_key=True)
+    id_hierarchy = _sql.Column(_sql.Integer)
+    to_collection_artists = _sql.Column(_sql.Integer)
