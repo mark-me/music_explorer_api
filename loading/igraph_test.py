@@ -46,6 +46,14 @@ class Database(_db_utils.DBStorage):
         graph.delete_vertices(vtx_to_exclude)
         return graph
 
+    def create_distances(self) -> None:
+        graph_artists= self.__get_artist_graph()
+        lst_vtx = []
+        vtx_in_collection = graph_artists.vs[graph_artists.vs['in_collection']]
+        for vtx in vtx_in_collection:
+            lst_vtx.append(graph_artists.get_all_shortest_paths(vtx, to = vtx_in_collection))
+            print(lst_vtx[0])
+
     def create_clusters(self) -> None:
         graph_all = self.__get_artist_graph()
         # Cluster all components
@@ -156,5 +164,79 @@ def plot_interactive(db_file: str) -> None:
 db = Database(db_file=db_file)
 # db.extract_artist_edges()
 # db.create_clusters()
-db.extract_community_dendrogram()
-plot_interactive(db_file=db_file)
+# db.extract_community_dendrogram()
+#plot_interactive(db_file=db_file)
+db.create_distances()
+
+# Random pick
+
+# Get random artist or requested artist
+# Select random collection item
+# Select random most similar artist from most specific cluster
+# Select random dissimilar artist (from other dendrogram branch)
+
+-- SQLite
+# CREATE TEMPORARY TABLE artist_cluster_branch AS
+# SELECT id_artist,
+#     name_artist,
+#     MAX(id_hierarchy) AS id_hierarchy,
+#     MIN(id_community) AS id_community_min,
+#     MAX(id_community) AS id_community_max
+# FROM artist_community_hierarchy
+# WHERE id_community > 1 AND
+#     in_collection = 1
+# GROUP BY id_artist,
+#     name_artist;
+
+# SELECT a.id_artist,
+#     a.name_artist,
+#     b.id_artist,
+#     b.name_artist
+# FROM artist_cluster_branch a
+# CROSS JOIN artist_cluster_branch    b
+# WHERE b.id_artist != a.id_artist AND
+#     b.id_community_min != a.id_community_min AND
+#     b.id_community_max != a.id_community_max;
+
+# Random pick of the day
+# Pick one random release from the collection
+# * Choose another release from the same artist
+# * Choose a release of another artist in the same end cluster
+
+# # Select random release
+# SELECT collection_items.id_release,
+#     release_artists.id_artist,
+#     collection_items.date_added,
+#     collection_items.id_instance,
+#     collection_items.title,
+#     collection_items.url_thumbnail,
+#     collection_items.url_cover,
+#     collection_items.year_released
+# FROM collection_items
+# INNER JOIN release_artists
+#     ON release_artists.id_release = collection_items.id_release
+# ORDER BY RANDOM()
+# LIMIT 1;
+
+# # Select closest artist in collection
+# CREATE TEMPORARY TABLE artist_max_hierarchy AS
+# SELECT id_artist, name_artist, MAX(id_hierarchy) as id_hierarchy
+# FROM artist_community_hierarchy
+# GROUP BY id_artist, name_artist
+# HAVING SUM(in_collection) > 1
+# ORDER BY MAX(id_hierarchy) DESC;
+
+# CREATE TEMPORARY TABLE artist_community_deep AS
+# SELECT a.id_artist, a.name_artist, b.id_community
+# FROM artist_max_hierarchy   a
+# INNER JOIN artist_community_hierarchy   b
+#     ON a.id_artist = b.id_artist AND
+#         a.id_hierarchy = b.id_hierarchy;
+
+# SELECT a.id_artist, a.name_artist, b.id_artist, b.name_artist
+# FROM artist_community_deep  a
+# INNER JOIN artist_community_hierarchy   b
+#     ON b.id_community = a.id_community
+# WHERE in_collection = 1 AND
+#     a.id_artist != b.id_artist
+# ORDER BY a.id_artist, a.name_artist;
