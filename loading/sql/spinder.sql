@@ -1,7 +1,7 @@
 -- SQLite
 CREATE INDEX IF NOT EXISTS community_dendrogram_vertices_id_community ON community_dendrogram_vertices (id_community);
 
-
+-- Selecting dissimilar
 CREATE TEMPORARY TABLE artist_cluster_branch AS
 SELECT id_artist,
     name_artist,
@@ -14,7 +14,6 @@ WHERE id_community > 1 AND
 GROUP BY id_artist,
     name_artist;
 
--- Selecting dissimilar
 CREATE TEMPORARY TABLE artist_dissimilar AS
 SELECT a.id_artist,
     a.name_artist,
@@ -27,7 +26,6 @@ WHERE b.id_artist != a.id_artist AND
     b.id_community_max != a.id_community_max;
 
 -- Select similar
-
 -- Select the artists most specific cluster where there is at least one other artist in the collection
 CREATE TEMPORARY TABLE artist_alternative_cluster AS
 SELECT a.id_artist,
@@ -42,7 +40,6 @@ WHERE a.id_community > 1 AND
     a.in_collection = 1
 GROUP BY a.id_artist, a.name_artist;
 
-
 SELECT a.id_artist,
     a.name_artist,
     a.id_community,
@@ -53,3 +50,12 @@ INNER JOIN artist_community_hierarchy   b
     ON b.id_community = a.id_community
 WHERE a.id_artist != b.id_artist AND
     b.in_collection = 1;
+
+-- Get random collection item
+SELECT c.id_artist,
+    a.*
+FROM collection_items a
+INNER JOIN release_artists b
+    ON b.id_release = a.id_release
+INNER JOIN artist_cluster_branch    c
+    ON c.id_artist = b.id_artist;
