@@ -58,6 +58,7 @@ class Discogs(_db_utils.DBStorage):
         self.artists_from_collection()
         self.extract_artist_edges()
         self.create_clusters()
+        self.similar_dissimilar()
 
     def collection_value(self) -> None:
         """Process the user's collection value statistics"""
@@ -284,3 +285,6 @@ class Discogs(_db_utils.DBStorage):
             artists.append(self.client.artist(id=row['id_artist']))
         derive = _derive.Artists(artists=artists)
         derive.process_masters()
+
+    def similar_dissimilar(self) -> None:
+        self.execute_sql_file(file_name="loading/sql/spinder.sql")
