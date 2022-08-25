@@ -1,5 +1,6 @@
--- SQLite
 CREATE INDEX IF NOT EXISTS community_dendrogram_vertices_id_community ON community_dendrogram_vertices (id_community);
+
+DROP VIEW IF EXISTS vw_spinder;
 
 -- Selecting dissimilar
 -- Putting artists in their own split from the main pool (first split in the dendrogram)
@@ -20,7 +21,7 @@ DROP TABLE IF EXISTS artist_dissimilar;
 
 CREATE TABLE artist_dissimilar AS
 SELECT a.id_artist,
-    b.id_artist_dissimilar,
+    b.id_artist as id_artist_dissimilar
 FROM artist_cluster_branch a
 CROSS JOIN artist_cluster_branch    b
 WHERE b.id_artist != a.id_artist AND
@@ -48,7 +49,7 @@ DROP TABLE IF EXISTS artist_similar;
 
 CREATE TABLE artist_similar AS
 SELECT a.id_artist,
-    b.id_artist_similar
+    b.id_artist as id_artist_similar
 FROM artist_alternative_cluster  a
 INNER JOIN artist_community_hierarchy   b
     ON b.id_community = a.id_community
@@ -56,3 +57,29 @@ WHERE a.id_artist != b.id_artist AND
     b.in_collection = 1;
 
 CREATE INDEX IF NOT EXISTS artist_similar_id_artist ON artist_similar (id_artist);
+
+CREATE VIEW vw_spinder AS
+SELECT a.id_artist,
+    a.name_artist,
+    s.id_artist_similar AS id_artist_similar,
+    d.id_artist_dissimilar AS id_artist_dissimilar,
+    r.id_release,
+    r.title AS name_release
+FROM artist a
+INNER JOIN artist_similar   s
+    ON s.id_artist = a.id_artist
+INNER JOIN artist_dissimilar    d
+    ON d.id_artist = a.id_artist
+INNER JOIN release_artists  ra
+    ON ra.id_artist = a.id_artist
+INNER JOIN collection_items  c
+    ON c.id_release = ra.id_release
+INNER JOIN release  r
+    ON r.id_release = ra.id_release
+WHERE a.id_artist IN (SELECT id_artist
+                    FROM artist
+                    WHERE qty_collection_items > 0
+                    ORDER BY RANDOM()
+                    LIMIT 1)
+ORDER BY RANDOM()
+LIMIT 1;
