@@ -64,7 +64,9 @@ SELECT a.id_artist,
     s.id_artist_similar AS id_artist_similar,
     d.id_artist_dissimilar AS id_artist_dissimilar,
     r.id_release,
-    r.title AS name_release
+    r.title AS name_release,
+    r.url_cover,
+    r.url_thumbnail
 FROM artist a
 INNER JOIN artist_similar   s
     ON s.id_artist = a.id_artist
