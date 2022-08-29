@@ -1,6 +1,8 @@
 CREATE INDEX IF NOT EXISTS community_dendrogram_vertices_id_community ON community_dendrogram_vertices (id_community);
 
-DROP VIEW IF EXISTS vw_spinder;
+DROP VIEW IF EXISTS vw_spinder_random;
+
+DROP VIEW IF EXISTS vw_spinder_artist;
 
 -- Selecting dissimilar
 -- Putting artists in their own split from the main pool (first split in the dendrogram)
@@ -58,7 +60,7 @@ WHERE a.id_artist != b.id_artist AND
 
 CREATE INDEX IF NOT EXISTS artist_similar_id_artist ON artist_similar (id_artist);
 
-CREATE VIEW vw_spinder AS
+CREATE VIEW vw_spinder_random AS
 SELECT a.id_artist,
     a.name_artist,
     s.id_artist_similar AS id_artist_similar,
@@ -68,7 +70,7 @@ SELECT a.id_artist,
     r.url_cover,
     r.url_thumbnail
 FROM artist a
-INNER JOIN artist_similar   s
+LEFT JOIN artist_similar   s
     ON s.id_artist = a.id_artist
 INNER JOIN artist_dissimilar    d
     ON d.id_artist = a.id_artist
@@ -85,3 +87,25 @@ WHERE a.id_artist IN (SELECT id_artist
                     LIMIT 1)
 ORDER BY RANDOM()
 LIMIT 1;
+
+CREATE VIEW vw_spinder_artist AS
+SELECT a.id_artist,
+    a.name_artist,
+    s.id_artist_similar AS id_artist_similar,
+    d.id_artist_dissimilar AS id_artist_dissimilar,
+    r.id_release,
+    r.title AS name_release,
+    r.url_cover,
+    r.url_thumbnail
+FROM artist a
+LEFT JOIN artist_similar   s
+    ON s.id_artist = a.id_artist
+INNER JOIN artist_dissimilar    d
+    ON d.id_artist = a.id_artist
+INNER JOIN release_artists  ra
+    ON ra.id_artist = a.id_artist
+INNER JOIN collection_items  c
+    ON c.id_release = ra.id_release
+INNER JOIN release  r
+    ON r.id_release = ra.id_release
+ORDER BY RANDOM();

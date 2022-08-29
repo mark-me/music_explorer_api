@@ -39,3 +39,14 @@ class DendrogramEdge(_pydantic.BaseModel):
     id_to: int
     id_hierarchy: int
     to_collection_artists: int
+
+
+class Spinder(_pydantic.BaseModel):
+    id_artist: int
+    id_release: int
+    name_artist: str
+    name_release: str
+    url_cover: str
+    url_thumbnail: str
+    id_artist_similar: int
+    id_artist_dissimilar: int

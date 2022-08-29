@@ -1,4 +1,5 @@
 from typing import List
+from typing import Union
 
 import uvicorn
 
@@ -62,6 +63,18 @@ def read_dendrogram_edges(
     ):
     dendrogram_edges = _services.get_dendrogram_edges(db=db, id_hierarchy=id_hierarchy)
     return dendrogram_edges
+
+@app.post("/spinder/")
+def read_spinder(
+    id_artist: Union[int, None] = None,
+    db: _orm.Session=_fastapi.Depends(_services.get_db),
+    ):
+    print(id_artist)
+    if id_artist is None:
+        spinder_suggestion = _services.get_spinder_random(db=db)
+    else:
+        spinder_suggestion = _services.get_spinder_artist(db=db, id_artist=id_artist)
+    return spinder_suggestion
 
 
 if __name__ == "__main__":

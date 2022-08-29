@@ -49,3 +49,15 @@ def get_dendrogram_edges(db: _orm.Session, id_hierarchy: int) -> _orm.Query:
         filter(_models.DendrogramEdges.id_hierarchy == id_hierarchy).\
             all()
     return vertices
+
+def get_spinder_random(db: _orm.Session) -> _orm.Query:
+    result = db.query(_models.Spinder).\
+            all()
+    return result
+
+def get_spinder_artist(db: _orm.Session, id_artist: int) -> _orm.Query:
+    result = db.query(_models.SpinderArtist).\
+        filter(_models.SpinderArtist.id_artist == id_artist).\
+            limit(1).\
+            all()
+    return result

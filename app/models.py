@@ -49,3 +49,28 @@ class DendrogramEdges(_database.Base):
     id_to = _sql.Column(_sql.Integer, primary_key=True)
     id_hierarchy = _sql.Column(_sql.Integer)
     to_collection_artists = _sql.Column(_sql.Integer)
+
+
+class Spinder(_database.Base):
+    __tablename__ = "vw_spinder_random"
+
+    id_artist = _sql.Column(_sql.Integer, primary_key=True)
+    name_artist = _sql.Column(_sql.String)
+    id_artist_similar = _sql.Column(_sql.Integer)
+    id_artist_dissimilar = _sql.Column(_sql.Integer)
+    id_release = _sql.Column(_sql.Integer, primary_key=True)
+    name_release = _sql.Column(_sql.String)
+    url_cover = _sql.Column(_sql.String)
+    url_thumbnail = _sql.Column(_sql.String)
+
+class SpinderArtist(_database.Base):
+    __tablename__ = "vw_spinder_artist"
+
+    id_artist = _sql.Column(_sql.Integer, primary_key=True)
+    name_artist = _sql.Column(_sql.String)
+    id_artist_similar = _sql.Column(_sql.Integer)
+    id_artist_dissimilar = _sql.Column(_sql.Integer)
+    id_release = _sql.Column(_sql.Integer, primary_key=True)
+    name_release = _sql.Column(_sql.String)
+    url_cover = _sql.Column(_sql.String)
+    url_thumbnail = _sql.Column(_sql.String)

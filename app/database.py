@@ -74,6 +74,9 @@ class ViewCollection(_BaseViewCreator):
                 ON release.id_release = release_artists.id_release"
         self.create(name_view=name_view, sql_definition=sql_definition)
 
+    def spinder(self) -> None:
+        pass
+
 
 class Artist(_BaseViewCreator):
     def __init__(self, db_file: str) -> None:
