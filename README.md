@@ -105,3 +105,16 @@ docker build -t ghcr.io/mark-me/musicexplorer:v0.0.1 .
 ```
 docker push ghcr.io/mark-me/musicexplorer:v0.0.1
 ```
+
+# Notes
+- V: Add an SVG button for adding suggestions to a localStorage (parkeer) list.
+- M: Send suggestion lists (all suggestions at once).
+- V: Walk through the suggestion lists front-end.
+- V: Hover overlay with icons for click actions: also fadeout on refresh.
+- V: Propose ideas for similar suggestions.
+- V: Think about the UI: the suggestions are artists, for which albums are randomly chosen, and presented as suggestions.
+- V: Think about viewing/navigating to:
+  - Artists in suggestion list (head + name)
+  - Other albums of artists
+  - Parking list
+- M: Think about suggestion similarity measure, for "user control" (V: settings).
