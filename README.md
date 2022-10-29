@@ -118,3 +118,6 @@ docker push ghcr.io/mark-me/musicexplorer:v0.0.1
   - Other albums of artists
   - Parking list
 - M: Think about suggestion similarity measure, for "user control" (V: settings).
+
+
+Bla blah
