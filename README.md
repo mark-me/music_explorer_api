@@ -108,7 +108,7 @@ docker push ghcr.io/mark-me/musicexplorer:v0.0.1
 
 # Notes
 **2022-11-04**
-Idea for some of the point 07 'Artist in suggestion list' from our last meeting:
+Additions to point 07 'Artist in suggestion list' from our last meeting:
 - A list with artists which are from the 'similarity neighborhood' (if similarity neighborhood make sense to you, I don't know). Each of which has a:
   - head
   - name
