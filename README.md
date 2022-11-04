@@ -107,17 +107,24 @@ docker push ghcr.io/mark-me/musicexplorer:v0.0.1
 ```
 
 # Notes
-- V: Add an SVG button for adding suggestions to a localStorage (parkeer) list.
-- M: Send suggestion lists (all suggestions at once).
-- V: Walk through the suggestion lists front-end.
-- V: Hover overlay with icons for click actions: also fadeout on refresh.
-- V: Propose ideas for similar suggestions.
-- V: Think about the UI: the suggestions are artists, for which albums are randomly chosen, and presented as suggestions.
-- V: Think about viewing/navigating to:
+**2022-11-04**
+Idea for some of the point 07 'Artist in suggestion list' from our last meeting:
+- A list with artists which are from the 'similarity neighborhood' (if similarity neighborhood make sense to you, I don't know). Each of which has a:
+  - head
+  - name
+  - number for the albums in collection
+  - nearest connecting artist name (and head?) (I have some thoughts on this, but this is better explained in person)
+- Clicking one of these list items results in a random record of this artist
+
+**2022-10-29**
+- 01 - V: Add an SVG button for adding suggestions to a localStorage (parkeer) list.
+- 02 - M: Send suggestion lists (all suggestions at once).
+- 03 - V: Walk through the suggestion lists front-end.
+- 04 - V: Hover overlay with icons for click actions: also fadeout on refresh.
+- 05 - V: Propose ideas for similar suggestions.
+- 06 - V: Think about the UI: the suggestions are artists, for which albums are randomly chosen, and presented as suggestions.
+- 07 - V: Think about viewing/navigating to:
   - Artists in suggestion list (head + name)
   - Other albums of artists
   - Parking list
-- M: Think about suggestion similarity measure, for "user control" (V: settings).
-
-
-Bla blah
+- 08 - M: Think about suggestion similarity measure, for "user control" (V: settings).
