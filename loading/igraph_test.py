@@ -165,7 +165,7 @@ db = Database(db_file=db_file)
 # db.extract_artist_edges()
 # db.create_clusters()
 # db.extract_community_dendrogram()
-#plot_interactive(db_file=db_file)
+plot_interactive(db_file=db_file)
 db.create_distances()
 
 # Random pick
