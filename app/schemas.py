@@ -6,7 +6,7 @@ import pydantic as _pydantic
 class CollectionArtist(_pydantic.BaseModel):
     id_artist: int
     name_artist: str
-    url_artist_image: str
+    url_artist_image: _pydantic.HttpUrl
     qty_collection_items: int
 
 
@@ -15,14 +15,14 @@ class CollectionRelease(_pydantic.BaseModel):
     id_release: int
     name_artist: str
     name_release: str
-    url_cover: str
-    url_thumbnail: str
+    url_cover: _pydantic.HttpUrl
+    url_thumbnail: _pydantic.HttpUrl
 
 
 class ReleaseVideo(_pydantic.BaseModel):
     id_release: int
     title: str
-    url_video: str
+    url_video: _pydantic.HttpUrl
 
 
 class DendrogramVertex(_pydantic.BaseModel):
@@ -46,7 +46,8 @@ class Spinder(_pydantic.BaseModel):
     id_release: int
     name_artist: str
     name_release: str
-    url_cover: str
-    url_thumbnail: str
+    url_cover: _pydantic.HttpUrl
+    url_thumbnail: _pydantic.HttpUrl
     id_artist_similar: int
     id_artist_dissimilar: int
+    artists: List[CollectionArtist]

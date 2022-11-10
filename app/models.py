@@ -62,6 +62,7 @@ class Spinder(_database.Base):
     name_release = _sql.Column(_sql.String)
     url_cover = _sql.Column(_sql.String)
     url_thumbnail = _sql.Column(_sql.String)
+    lst_artists = CollectionArtist()
 
 class SpinderArtist(_database.Base):
     __tablename__ = "vw_spinder_artist"
