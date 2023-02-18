@@ -51,7 +51,8 @@ DROP TABLE IF EXISTS artist_similar;
 
 CREATE TABLE artist_similar AS
 SELECT a.id_artist,
-    b.id_artist as id_artist_similar
+    b.id_artist as id_artist_similar,
+    a.id_community
 FROM artist_alternative_cluster  a
 INNER JOIN artist_community_hierarchy   b
     ON b.id_community = a.id_community
@@ -63,6 +64,7 @@ CREATE INDEX IF NOT EXISTS artist_similar_id_artist ON artist_similar (id_artist
 CREATE VIEW vw_spinder_random AS
 SELECT a.id_artist,
     a.name_artist,
+    s.id_community,
     s.id_artist_similar AS id_artist_similar,
     d.id_artist_dissimilar AS id_artist_dissimilar,
     r.id_release,
