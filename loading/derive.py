@@ -18,7 +18,7 @@ class Artists():
         self.process_masters = True
 
     def process(self) -> None:
-        db_writer = _db_writer.Artists(db_file=self.db_file)        
+        db_writer = _db_writer.Artists(db_file=self.db_file)
         for artist in tqdm(self.__d_artists, total=len(self.__d_artists), desc="Artists"):
             exists = db_writer.in_db(id_artist=artist.id)
             if not exists:
@@ -38,8 +38,8 @@ class Artists():
                 db_writer.urls(df_urls=df_urls)
 
     def process_masters(self) -> None:
-        db_writer = _db_writer.Artists(db_file=self.db_file)        
-        for artist in tqdm(self.__d_artists, total=len(self.__d_artists), desc="Artists"):    
+        db_writer = _db_writer.Artists(db_file=self.db_file)
+        for artist in tqdm(self.__d_artists, total=len(self.__d_artists), desc="Artists"):
             df_masters = self.masters(artist=artist)
             db_writer.masters(df_masters=df_masters)
 
@@ -85,7 +85,7 @@ class Artists():
                                                       'width': 'width_image', 'height': 'height_image'})
         except:
             return df_images
-        return df_images        
+        return df_images
 
     def groups(self, artist: discogs_client.Artist) -> pd.DataFrame:
         groups = []
@@ -158,7 +158,7 @@ class MasterReleases():
     def __init__(self, df_masters: pd.DataFrame, db_file: str) -> None:
         self.__df_masters = df_masters
         self.__db_file = db_file
-        
+
     def process(self) -> None:
         for d_master in tqdm(self.__lst_masters, total=len(self.__lst_masters)):
             master = MasterRelease(release=d_master, db_file=self.__db_file)
@@ -247,11 +247,15 @@ class MasterRelease():
                 df_artist['position'] = track.data['position']
                 artists.append(df_artist)
         if len(artists) > 0:
-            df_artists = pd.concat(artists, axis=0, ignore_index=True)  
-            df_artists = df_artists[['name', 'role', 'id', 'resource_url', 'thumbnail_url', 'position']]  
+            df_artists = pd.concat(artists, axis=0, ignore_index=True)
+            if 'thumbnail_url' not in df_artists.columns:
+                df_artists = df_artists[['name', 'role', 'id', 'resource_url', 'position']]
+                df_artists['thumbnail_url'] = ''
+            else:
+                df_artists = df_artists[['name', 'role', 'id', 'resource_url', 'thumbnail_url', 'position']]
             df_artists = df_artists.rename(columns={'name': 'name_artist', 'id': 'id_artist', 'resource_url': 'api_artist',\
                 'thumbnail_url': 'url_thumbnail'})
-            df_artists['id_release'] = self.d_release.id 
+            df_artists['id_release'] = self.d_release.id
         return df_artists
 
     def videos(self) -> pd.DataFrame:
@@ -354,20 +358,24 @@ class Release(MasterRelease):
             artists.append(df_artist)
         if len(artists) > 0:
             df_artists = pd.concat(artists, axis=0, ignore_index=True)
-            df_artists = df_artists[['name', 'role', 'id', 'resource_url', 'thumbnail_url']]  
+            if 'thumnail_url' not in df_artists.columns:
+                df_artists = df_artists[['name', 'role', 'id', 'resource_url']]
+                df_artists['thumbnail_url'] = ''
+            else:
+                df_artists = df_artists[['name', 'role', 'id', 'resource_url', 'thumbnail_url']]
             df_artists = df_artists.rename(columns={'name': 'name_artist', 'id': 'id_artist', 'resource_url': 'api_artist',\
-                'thumbnail_url': 'url_thumbnail'})      
-            df_artists['id_release'] = self.d_release.id 
+                'thumbnail_url': 'url_thumbnail'})
+            df_artists['id_release'] = self.d_release.id
         return df_artists
 
     def stats(self) -> pd.DataFrame:
         df_stats = pd.DataFrame([self.d_release.data])
         df_stats = df_stats[['id', 'num_for_sale', 'lowest_price']]
         df_stats['time_value_retrieved'] = dt.datetime.now()
-        df_stats = df_stats.rename(columns={'id': 'id_release', 'num_for_sale': 'qty_for_sale', 'lowest_price': 'amt_price_lowest'})        
+        df_stats = df_stats.rename(columns={'id': 'id_release', 'num_for_sale': 'qty_for_sale', 'lowest_price': 'amt_price_lowest'})
         dict_community = {key: self.d_release.data['community'][key] for key in ['have', 'want']}
         df_community = pd.DataFrame([dict_community])
-        df_community = df_community.rename(columns={'have': 'qty_has', 'want': 'qty_want'}) 
+        df_community = df_community.rename(columns={'have': 'qty_has', 'want': 'qty_want'})
         df_stats = pd.concat([df_stats, df_community], axis=1, join='inner')
         return df_stats
 
@@ -420,8 +428,7 @@ class ArtistNetwork():
     def cluster_betweenness(self) -> pd.DataFrame:
         df_hierarchy = pd.DataFrame()
         return df_hierarchy
-    
+
     def centrality(self) -> pd.DataFrame:
         df_centrality = pd.DataFrame()
-        return df_centrality    
-    
+        return df_centrality
