@@ -19,9 +19,9 @@ This project is the result of another project where I tried a proof of concept i
 
 Now... If you are still interested and want to try this project out yourself, let me warn you in advance: this will need patience. Loading the data takes looooong since all is collected with Discogs API calls which aren't the fastest way for ingesting data.
 
-## Spinder
+## Spindler
 
-This project is quite big in scope in terms of developing a UI, so we take a short detour by introducing a new app: Spinder.
+This project is quite big in scope in terms of developing a UI, so we take a short detour by introducing a new app: [Spindler](https://marcel.website/spindler).
 
 When I clean/reorder my collection I too often come across records of which I think: GOD THIS IS GOOD: I NEED TO SPIN THIS! And I mean _too_ often. I quickly get snowed under with those thoughts, while I need to finish the task at hand: reordering my collection.... What if I can create this rediscovery of my own collection with a kind of Tinder interface? Random suggestion and an option to get more of this or reject the choice and go in a totally different direction? OK.... I know this isn't how Tinder actually works, but the analogy worked for me....
 
