@@ -1,9 +1,18 @@
 ---
 version: "2"
 services:
-  musicexplorer:
-      image: ghcr.io/mark-me/musicexplorer:v0.0.1
-      container_name: musicexplorer
-      volumes:
-        - /media/ncp/music_explorer:/data
-      restart: unless-stopped
+  collection_loader:
+    build:
+      context: ./app_loader
+    container_name: collection-loader
+    volumes:
+      - ${DIR_DATA}:/data
+  # musicexplorer:
+  #   build:
+  #      context: ./app
+  #   #image: ghcr.io/mark-me/musicexplorer:v0.0.1
+  #   container_name: musicexplorer
+  #   volumes:
+  #     - ${DIR_DATA}:/data
+  #   restart: unless-stopped
+

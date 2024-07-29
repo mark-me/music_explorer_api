@@ -1,18 +1,18 @@
-FROM python:3.9
+FROM python:3.12.3-slim-bookworm
 
-WORKDIR /code
+WORKDIR /app
+RUN mkdir config
+RUN mkdir artist_images
+COPY ./requirements.txt /app
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
-COPY ./requirements.txt /code/requirements.txt
-COPY ./config.yml /code/config.yml
+COPY . .
+RUN rm .env
 
-RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
+VOLUME /app/config
+VOLUME /app/artist_images
 
-COPY ./loading /code/loading
-COPY ./config.yml /code/loading/config.yml
+EXPOSE 5000
 
-COPY ./app /code/app
-COPY ./config.yml /code/app/config.yml
-
-WORKDIR /code/app
-
-CMD [ "python", "./main.py"]
+CMD ["./entrypoint.sh"]
