@@ -1,7 +1,8 @@
 import os
 import shutil
-import time
 import sqlite3
+import time
+
 import pandas as pd
 
 class ManageDB:
@@ -121,7 +122,7 @@ class DBStorage():
         db_con.close()
         return df
 
-    def read_sql(self, sql: str) -> pd.DataFrame():
+    def read_sql(self, sql: str) -> pd.DataFrame:
         db_con = sqlite3.connect(self.db_file)
         df = pd.read_sql_query(sql, con=db_con)
         db_con.close()

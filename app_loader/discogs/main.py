@@ -1,5 +1,5 @@
 import yaml
-import db_utils as _db_utils
+from db_utils import ManageDB
 import extract as _extract
 
 
@@ -10,7 +10,7 @@ def main():
     consumer_secret = config['app_secret']
     db_file = config['db_file']
 
-    db_manager = _db_utils.ManageDB(db_file=db_file)
+    db_manager = ManageDB(db_file=db_file)
     db_manager.create_backup()
     db_file = db_manager.create_load_copy()
     discogs_extractor = _extract.Discogs(consumer_key=consumer_key, consumer_secret=consumer_secret, db_file=db_file)

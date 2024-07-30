@@ -1,11 +1,10 @@
-import sqlite3
-from unicodedata import name
-import numpy as np
 import pandas as pd
-import db_utils as _db_utils
+import sqlite3
+
+from db_utils import DBStorage
 
 
-class Collection(_db_utils.DBStorage):
+class Collection(DBStorage):
     """A class for storing collection item data
     """
     def __init__(self, db_file) -> None:
@@ -59,7 +58,7 @@ class Collection(_db_utils.DBStorage):
         if df_write_attempts.shape[0] > 0:
             self.store_replace(df=df_write_attempts, name_table='artist_write_attempts')
 
-class Artists(_db_utils.DBStorage):
+class Artists(DBStorage):
     """A class for storing artist related data
     """
     def __init__(self, db_file) -> None:
@@ -136,7 +135,7 @@ class Artists(_db_utils.DBStorage):
         self.store_replace(df=df_ignore, name_table='artist_ignore')
 
 
-class Master(_db_utils.DBStorage):
+class Master(DBStorage):
     def __init__(self, db_file) -> None:
         super().__init__(db_file)
 
@@ -187,7 +186,7 @@ class Master(_db_utils.DBStorage):
             self.store_append(df=df_stats, name_table='master_stats')
 
 
-class Release(_db_utils.DBStorage):
+class Release(DBStorage):
     def __init__(self, db_file) -> None:
         super().__init__(db_file)
 
@@ -258,7 +257,7 @@ class Release(_db_utils.DBStorage):
             self.store_append(df=df_stats, name_table='release_stats')
 
 
-class ArtistNetwork(_db_utils.DBStorage):
+class ArtistNetwork(DBStorage):
     def __init__(self, db_file) -> None:
         super().__init__(db_file)
 

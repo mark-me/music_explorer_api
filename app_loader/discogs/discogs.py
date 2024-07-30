@@ -1,11 +1,13 @@
-import discogs_client
-from discogs_client.exceptions import HTTPError
-
 import logging
 import os
 from pathlib import Path
 import time
 
+import discogs_client
+from discogs_client.exceptions import HTTPError
+
+from db_utils import ManageDB
+import extract as _extract
 from utils import SecretsYAML
 
 logging.basicConfig(
@@ -103,56 +105,19 @@ class Discogs:
         logger.info(f"Connected and written user credentials of {user.name}.")
         return {"status_code": 200, "message": f"User {user.username} connected."}
 
-    def get_artist(self, name_artist: str) -> dict:
-        try:
-            logger.info(f"Fetching artist information of {name_artist}.")
-            artists = self.discogsclient.search(name_artist, type="artist")
-        except HTTPError as e:
-            if e.status_code == 429:
-                time.sleep(60)
+    def process_user_data(self):
+        db_file = "/data/music_collection.db"
 
-        if artists == None:
-            msg = f"Artist not found: {name_artist}"
-            logger.error(msg)
-            dict_result = None
-        else:
-            artist = artists[0]
-            dict_result = {
-                "id": artist.id,
-                "name": artist.name,
-                "name_variations": artist.name_variations,
-                "name_real": artist.real_name,
-                "images": artist.images,
-                "members": artist.members,
-                "url_discogs": artist.url,
-                "urls_other": artist.urls,
-            }
-        return dict_result
-
-    def get_album(self, name_artist: str, name_album: str) -> dict:
-        try:
-            logger.info(f"Fetching album information of {name_artist}-{name_album}.")
-            albums = self.discogsclient.search(
-                f"{name_artist} - {name_album}", type="master"
-            )
-        except HTTPError as e:
-            if e.status_code == 429:
-                time.sleep(60)
-
-        if albums == None:
-            msg = f"Album not found: {name_album}"
-            logger.error(msg)
-            dict_result = None
-        else:
-            album = albums._pages[1][0]
-            print(album)
-            dict_result = {
-                "id": album.id,
-                "name_album": album.title,
-                "url_discogs": album.url,
-                "year": album.data["year"],
-            }
-        return dict_result
+        db_manager = ManageDB(db_file=db_file)
+        db_manager.create_backup()
+        db_file = db_manager.create_load_copy()
+        discogs_extractor = _extract.Discogs(
+            consumer_key=self._consumer_key,
+            consumer_secret=self._consumer_secret,
+            db_file=db_file,
+        )
+        discogs_extractor.start()
+        db_manager.replace_db()
 
     def _save_artist_image_cache(self, name_artist: str, image: bytes):
         """Save an image to the cache directory

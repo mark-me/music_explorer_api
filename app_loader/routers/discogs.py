@@ -48,6 +48,10 @@ async def accept_user_token(oauth_token: str, oauth_verifier: str):
     result = discogs.save_user_token(oauth_verifier)
     return result
 
+@router.get("/process_user_data/")
+async def process_user_data():
+    discogs.process_user_data()
+
 @router.get("/artist-image/")
 async def get_artist_image(name_artist: str):
     """ Retrieve an image for the artist

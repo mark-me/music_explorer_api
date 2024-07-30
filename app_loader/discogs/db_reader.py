@@ -1,10 +1,10 @@
-import sqlite3
-import numpy as np
 import pandas as pd
-import db_utils as _db_utils
+import sqlite3
+
+from db_utils import DBStorage
 
 
-class Collection(_db_utils.DBStorage):
+class Collection(DBStorage):
     def __init__(self, db_file) -> None:
         super().__init__(db_file)
         self.create_view_artists_not_added()
@@ -53,7 +53,7 @@ class Collection(_db_utils.DBStorage):
         return self.read_table(name_table='artist')
 
 
-class Artists(_db_utils.DBStorage):
+class Artists(DBStorage):
     def __init__(self, db_file) -> None:
         super().__init__(db_file)
 
