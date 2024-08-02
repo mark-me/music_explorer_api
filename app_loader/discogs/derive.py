@@ -3,7 +3,7 @@ import datetime as dt
 import igraph as igraph
 import pandas as pd
 from tqdm import tqdm
-from discogs_client.models import Artist, CollectionItemInstance, User
+from discogs_client.models import Artist, CollectionItemInstance
 
 import discogs.db_writer as _db_writer
 
@@ -306,9 +306,7 @@ class MasterRelease:
                 artists.append(df_artist)
         if len(artists) > 0:
             df_artists = pd.concat(artists, axis=0, ignore_index=True)
-            df_artists = df_artists[
-                ["name", "role", "id", "resource_url", "position"]
-            ]
+            df_artists = df_artists[["name", "role", "id", "resource_url", "position"]]
             df_artists = df_artists.rename(
                 columns={
                     "name": "name_artist",
@@ -447,9 +445,7 @@ class Release(MasterRelease):
             artists.append(df_artist)
         if len(artists) > 0:
             df_artists = pd.concat(artists, axis=0, ignore_index=True)
-            df_artists = df_artists[
-                ["name", "role", "id", "resource_url"]
-            ]
+            df_artists = df_artists[["name", "role", "id", "resource_url"]]
             df_artists = df_artists.rename(
                 columns={
                     "name": "name_artist",
@@ -486,6 +482,7 @@ class Collection:
     def __init__(self, db_file: str) -> None:
         self.db_writer = _db_writer.Collection(db_file=db_file)
 
+
 class CollectionItem:
     def __init__(self, item: CollectionItemInstance, db_file: str) -> None:
         self.__item = item
@@ -510,8 +507,7 @@ class CollectionItem:
             "url_thumbnail": self.__item.data["basic_information"]["thumb"],
             "url_cover": self.__item.data["basic_information"]["cover_image"],
             "year_released": self.__item.data["basic_information"]["year"],
-            "rating": self.__item.rating,
-            "country": self.__item.release.country,
+            "rating": self.__item.data["rating"],
         }
         df_item = pd.DataFrame(dict_item, index=[0])
         return df_item
