@@ -13,7 +13,7 @@ def main():
     db_manager = ManageDB(db_file=db_file)
     db_manager.create_backup()
     db_file = db_manager.create_load_copy()
-    discogs_extractor = _extract.Discogs(consumer_key=consumer_key, consumer_secret=consumer_secret, db_file=db_file)
+    discogs_extractor = _extract.Extractor(consumer_key=consumer_key, consumer_secret=consumer_secret, db_file=db_file)
     discogs_extractor.start()
     db_manager.replace_db()
 

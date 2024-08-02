@@ -3,15 +3,15 @@ import datetime as dt
 import igraph as igraph
 import pandas as pd
 from tqdm import tqdm
-import discogs_client
+from discogs_client.models import Artist, CollectionItemInstance, User
 
-import db_writer as _db_writer
+import discogs.db_writer as _db_writer
 
 
 class Artists:
     """A class that processes artist related data"""
 
-    def __init__(self, artists: discogs_client.Artist, db_file: str) -> None:
+    def __init__(self, artists: Artist, db_file: str) -> None:
         self.__d_artists = artists
         self.db_file = db_file
         self.process_masters = True
@@ -48,7 +48,7 @@ class Artists:
             df_masters = self.masters(artist=artist)
             db_writer.masters(df_masters=df_masters)
 
-    def artist(self, artist: discogs_client.Artist) -> pd.DataFrame:
+    def artist(self, artist: Artist) -> pd.DataFrame:
         df_artist = pd.DataFrame()
         try:
             dict_artist = {"id_artist": artist.id, "name_artist": artist.name}
@@ -57,7 +57,7 @@ class Artists:
             pass
         return df_artist
 
-    def masters(self, artist: discogs_client.Artist) -> pd.DataFrame:
+    def masters(self, artist: Artist) -> pd.DataFrame:
         masters = []
         df_masters = pd.DataFrame()
         try:
@@ -97,7 +97,7 @@ class Artists:
             pass
         return df_masters
 
-    def images(self, artist: discogs_client.Artist) -> pd.DataFrame:
+    def images(self, artist: Artist) -> pd.DataFrame:
         try:
             images = []
             df_images = pd.DataFrame()
@@ -122,7 +122,7 @@ class Artists:
             return df_images
         return df_images
 
-    def groups(self, artist: discogs_client.Artist) -> pd.DataFrame:
+    def groups(self, artist: Artist) -> pd.DataFrame:
         groups = []
         df_groups = pd.DataFrame()
         try:
@@ -145,7 +145,7 @@ class Artists:
             pass
         return df_groups
 
-    def aliases(self, artist: discogs_client.Artist) -> pd.DataFrame:
+    def aliases(self, artist: Artist) -> pd.DataFrame:
         aliases = []
         df_aliases = pd.DataFrame()
         try:
@@ -167,7 +167,7 @@ class Artists:
             pass
         return df_aliases
 
-    def members(self, artist: discogs_client.Artist) -> pd.DataFrame:
+    def members(self, artist: Artist) -> pd.DataFrame:
         members = []
         df_members = pd.DataFrame()
         try:
@@ -192,7 +192,7 @@ class Artists:
             pass
         return df_members
 
-    def urls(self, artist: discogs_client.Artist) -> pd.DataFrame:
+    def urls(self, artist: Artist) -> pd.DataFrame:
         urls = []
         df_urls = pd.DataFrame()
         try:
@@ -307,14 +307,13 @@ class MasterRelease:
         if len(artists) > 0:
             df_artists = pd.concat(artists, axis=0, ignore_index=True)
             df_artists = df_artists[
-                ["name", "role", "id", "resource_url", "thumbnail_url", "position"]
+                ["name", "role", "id", "resource_url", "position"]
             ]
             df_artists = df_artists.rename(
                 columns={
                     "name": "name_artist",
                     "id": "id_artist",
                     "resource_url": "api_artist",
-                    "thumbnail_url": "url_thumbnail",
                 }
             )
             df_artists["id_release"] = self.d_release.id
@@ -449,14 +448,13 @@ class Release(MasterRelease):
         if len(artists) > 0:
             df_artists = pd.concat(artists, axis=0, ignore_index=True)
             df_artists = df_artists[
-                ["name", "role", "id", "resource_url", "thumbnail_url"]
+                ["name", "role", "id", "resource_url"]
             ]
             df_artists = df_artists.rename(
                 columns={
                     "name": "name_artist",
                     "id": "id_artist",
                     "resource_url": "api_artist",
-                    "thumbnail_url": "url_thumbnail",
                 }
             )
             df_artists["id_release"] = self.d_release.id
@@ -488,17 +486,8 @@ class Collection:
     def __init__(self, db_file: str) -> None:
         self.db_writer = _db_writer.Collection(db_file=db_file)
 
-    def value(self, user: discogs_client.User) -> None:
-        df_value = pd.DataFrame([user.collection_value.data])
-        df_value["qty_items"] = user.num_collection
-        df_value["time_value_retrieved"] = dt.datetime.now()
-        self.db_writer.value(df_value=df_value)
-
-
 class CollectionItem:
-    def __init__(
-        self, item: discogs_client.CollectionItemInstance, db_file: str
-    ) -> None:
+    def __init__(self, item: CollectionItemInstance, db_file: str) -> None:
         self.__item = item
         self.__release = Release(release=item.release, db_file=db_file)
         self.db_file = db_file
@@ -511,9 +500,9 @@ class CollectionItem:
 
     def __collection_item(self) -> pd.DataFrame:
         dict_item = {
-            "id_release": self.__item.id,
-            "date_added": self.__item.date_added,
-            "id_instance": self.__item.instance_id,
+            "id_release": self.__item.data["id"],
+            "date_added": self.__item.data["date_added"],
+            "id_instance": self.__item.data["instance_id"],
             "title": self.__item.data["basic_information"]["title"],
             "id_master": self.__item.data["basic_information"]["master_id"],
             "api_master": self.__item.data["basic_information"]["master_url"],

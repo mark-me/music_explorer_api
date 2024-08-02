@@ -5,57 +5,23 @@ import yaml
 import pandas as pd
 import igraph as ig
 from tqdm import tqdm
-import discogs_client
+from discogs_client import Client
 
-import derive as _derive
-from db_utils import DBStorage
-import db_writer as _db_writer
-import db_reader as _db_reader
+from discogs.db_utils import DBStorage
+import discogs.derive as _derive
+import discogs.db_writer as _db_writer
+import discogs.db_reader as _db_reader
 
 
-class Discogs(DBStorage):
+class Extractor(DBStorage):
     """A class for extracting, processing and storing a user's collection data from Discogs"""
 
-    def __init__(self, consumer_key: str, consumer_secret: str, db_file: str) -> None:
+    def __init__(self, client_discogs: Client, db_file: str) -> None:
         super().__init__(db_file)
-        self.consumer_key = consumer_key
-        self.consumer_secret = consumer_secret
-        self.client = self.__set_user_tokens()
-
-    def __set_user_tokens(self) -> discogs_client.Client:
-        """Set-up the user's account to use with for the extraction using Discogs API"""
-        file_user_token = "/data/user_tokens.yml"
-        has_token = False
-        if os.path.isfile(file_user_token):
-            with open(file_user_token) as file:
-                dict_token = yaml.load(file, Loader=yaml.FullLoader)
-            has_token = "token" in dict_token and "secret" in dict_token
-        if not has_token:
-            d = discogs_client.Client(
-                user_agent="music_collection_api/1.0",
-                consumer_key=self.consumer_key,
-                consumer_secret=self.consumer_secret,
-            )
-            url = d.get_authorize_url()
-            print("Visit " + url[2] + " to allow the client to access")
-            code_verify = input("Enter the verification code: ")
-            access_token = d.get_access_token(code_verify)
-            dict_token = {"token": access_token[0], "secret": access_token[1]}
-            with open(file_user_token, "w") as file:
-                yaml.dump(dict_token, file)
-        else:
-            d = discogs_client.Client(
-                user_agent="music_collection_api/1.0",
-                consumer_key=self.consumer_key,
-                consumer_secret=self.consumer_secret,
-                token=dict_token["token"],
-                secret=dict_token["secret"],
-            )
-        return d
+        self.client_discogs = client_discogs
 
     def start(self) -> None:
         """Starts user's collection processing"""
-        self.collection_value()
         self.collection_items()
         self.artist_set_attributes()
         self.artists_from_collection()
@@ -63,14 +29,9 @@ class Discogs(DBStorage):
         self.create_clusters()
         self.similar_dissimilar()
 
-    def collection_value(self) -> None:
-        """Process the user's collection value statistics"""
-        derive = _derive.Collection(db_file=self.db_file)
-        derive.value(self.client.identity())
-
     def collection_items(self) -> None:
         """Process the user's collection items"""
-        me = self.client.identity()
+        me = self.client_discogs.identity()
         db_writer = _db_writer.Collection(db_file=self.db_file)
         db_writer.drop_tables()
         qty_items = me.collection_folders[0].count
@@ -170,7 +131,7 @@ class Discogs(DBStorage):
             df_artists_new = db_reader.artists_not_added()
             artists = []
             for index, row in df_artists_new.iterrows():
-                artists.append(self.client.artist(id=row["id_artist"]))
+                artists.append(self.client_discogs.artist(id=row["id_artist"]))
                 df_write_attempts = pd.concat(
                     [
                         df_write_attempts,
@@ -348,7 +309,7 @@ class Discogs(DBStorage):
         df_artists = db_reader.artists()
         artists = []
         for index, row in tqdm(df_artists.iterrows(), total=df_artists.shape[0]):
-            artists.append(self.client.artist(id=row["id_artist"]))
+            artists.append(self.client_discogs.artist(id=row["id_artist"]))
         derive = _derive.Artists(artists=artists)
         derive.process_masters()
 
