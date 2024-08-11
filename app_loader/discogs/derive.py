@@ -223,13 +223,13 @@ class MasterReleases:
 
 class MasterRelease:
     def __init__(self, release, db_file: str) -> None:
-        self.d_release = release
+        self.dict_release = release
         self.db_file = db_file
 
     def process(self) -> None:
         db_writer = _db_writer.Master(db_file=self.db_file)
         df_stats = self.stats()
-        exists = self.db_writer.in_db(id_master=self.d_release.id)
+        exists = self.db_writer.in_db(id_master=self.dict_release.id)
         if not exists:
             df_master = self.master()
             df_genres = self.genres()
@@ -249,9 +249,9 @@ class MasterRelease:
         pass
 
     def stats(self) -> pd.DataFrame:
-        stats = self.d_release.data["stats"]
+        stats = self.dict_release.data["stats"]
         dict_stats = {
-            "id_master": self.d_release.id,
+            "id_master": self.dict_release.id,
             "qty_wants": stats["community"]["in_wantlist"],
             "qty_has": stats["community"]["in_collection"],
         }
@@ -261,44 +261,44 @@ class MasterRelease:
     def styles(self) -> pd.DataFrame:
         styles = []
         df_styles = pd.DataFrame()
-        if self.d_release.styles is not None:
-            for style in self.d_release.styles:
+        if self.dict_release.styles is not None:
+            for style in self.dict_release.styles:
                 df_style = pd.DataFrame([style])
                 styles.append(df_style)
             df_styles = pd.DataFrame()
             if len(styles) > 0:
                 df_styles = pd.concat(styles, axis=0, ignore_index=True)
-                df_styles["id_release"] = self.d_release.id
+                df_styles["id_release"] = self.dict_release.id
         return df_styles
 
     def genres(self) -> pd.DataFrame:
         genres = []
         df_genres = pd.DataFrame()
-        for genre in self.d_release.genres:
+        for genre in self.dict_release.genres:
             df_genre = pd.DataFrame([genre])
             genres.append(df_genre)
         if len(genres) > 0:
             df_genres = pd.concat(genres, axis=0, ignore_index=True)
-            df_genres["id_release"] = self.d_release.id
+            df_genres["id_release"] = self.dict_release.id
             df_genres = df_genres.set_axis(["name_genre", "id_release"], axis=1)
         return df_genres
 
     def tracks(self) -> pd.DataFrame:
         tracks = []
         df_tracks = pd.DataFrame()
-        for track in self.d_release.tracklist:
+        for track in self.dict_release.tracklist:
             dict_track = track.data
             tracks.append(pd.DataFrame([dict_track]))
         if len(tracks) > 0:
             df_tracks = pd.concat(tracks, axis=0, ignore_index=True)
             df_tracks = df_tracks[["position", "title", "duration"]]
-            df_tracks["id_release"] = self.d_release.id
+            df_tracks["id_release"] = self.dict_release.id
         return df_tracks
 
     def track_artists(self) -> pd.DataFrame:
         artists = []
         df_artists = pd.DataFrame()
-        for track in self.d_release.tracklist:
+        for track in self.dict_release.tracklist:
             if "extraartists" in track.data:
                 dict_artist = track.data["extraartists"]
                 df_artist = pd.DataFrame(dict_artist)
@@ -314,20 +314,20 @@ class MasterRelease:
                     "resource_url": "api_artist",
                 }
             )
-            df_artists["id_release"] = self.d_release.id
+            df_artists["id_release"] = self.dict_release.id
         return df_artists
 
     def videos(self) -> pd.DataFrame:
         videos = []
         df_videos = pd.DataFrame()
-        for video in self.d_release.videos:
+        for video in self.dict_release.videos:
             dict_video = video.data
             videos.append(pd.DataFrame([dict_video]))
         if len(videos) > 0:
             df_videos = pd.concat(videos, axis=0, ignore_index=True)
             df_videos = df_videos[["uri", "title", "duration"]]
             df_videos = df_videos.rename(columns={"uri": "url_video"})
-            df_videos["id_release"] = self.d_release.id
+            df_videos["id_release"] = self.dict_release.id
         return df_videos
 
 
@@ -341,7 +341,7 @@ class Release(MasterRelease):
     def process(self) -> None:
         db_writer = _db_writer.Release(db_file=self.db_file)
         df_stats = self.stats()
-        exists = db_writer.in_db(id_release=self.d_release.id)
+        exists = db_writer.in_db(id_release=self.dict_release.id)
         if not exists:
             df_release = self.release()
             df_labels = self.labels()
@@ -367,7 +367,7 @@ class Release(MasterRelease):
         db_writer.stats(df_stats=df_stats)
 
     def release(self) -> pd.DataFrame:
-        df_release = pd.DataFrame([self.d_release.data])
+        df_release = pd.DataFrame([self.dict_release.data])
         cols_release = [
             "id",
             "master_id",
@@ -396,20 +396,20 @@ class Release(MasterRelease):
 
     def release_artists(self) -> pd.DataFrame:
         artists = []
-        for artist in self.d_release.artists:
-            artists.append({"id_artist": artist.id, "id_release": self.d_release.id})
+        for artist in self.dict_release.artists:
+            artists.append({"id_artist": artist.id, "id_release": self.dict_release.id})
         df_artists = pd.DataFrame(artists)
         return df_artists
 
     def labels(self) -> pd.DataFrame:
         labels = []
-        for label in self.d_release.labels:
+        for label in self.dict_release.labels:
             df_label = pd.DataFrame([label.data])
             labels.append(df_label)
         df_labels = pd.DataFrame()
         if len(labels) > 0:
             df_labels = pd.concat(labels, axis=0, ignore_index=True)
-            df_labels["id_release"] = self.d_release.id
+            df_labels["id_release"] = self.dict_release.id
             df_labels = df_labels[
                 ["id_release", "id", "name", "catno", "thumbnail_url"]
             ]
@@ -424,14 +424,14 @@ class Release(MasterRelease):
 
     def formats(self) -> pd.DataFrame:
         formats = []
-        for format in self.d_release.formats:
+        for format in self.dict_release.formats:
             df_format = pd.DataFrame([format])
             formats.append(df_format)
         df_formats = pd.DataFrame()
         if len(formats) > 0:
             df_formats = pd.concat(formats, axis=0, ignore_index=True)
             df_formats = df_formats[["name", "qty"]]
-            df_formats["id_release"] = self.d_release.id
+            df_formats["id_release"] = self.dict_release.id
             df_formats = df_formats.rename(
                 columns={"name": "name_format", "qty": "qty_format"}
             )
@@ -440,7 +440,7 @@ class Release(MasterRelease):
     def credits(self) -> pd.DataFrame:
         artists = []
         df_artists = pd.DataFrame()
-        for artist in self.d_release.credits:
+        for artist in self.dict_release.credits:
             df_artist = pd.DataFrame([artist.data])
             artists.append(df_artist)
         if len(artists) > 0:
@@ -453,22 +453,27 @@ class Release(MasterRelease):
                     "resource_url": "api_artist",
                 }
             )
-            df_artists["id_release"] = self.d_release.id
+            df_artists["id_release"] = self.dict_release.id
         return df_artists
 
     def stats(self) -> pd.DataFrame:
-        df_stats = pd.DataFrame([self.d_release.data])
-        df_stats = df_stats[["id", "num_for_sale", "lowest_price"]]
-        df_stats["time_value_retrieved"] = dt.datetime.now()
-        df_stats = df_stats.rename(
-            columns={
-                "id": "id_release",
-                "num_for_sale": "qty_for_sale",
-                "lowest_price": "amt_price_lowest",
-            }
-        )
+        dict_data = self.dict_release.data
+        cols_sales = ["id", "num_for_sale", "lowest_price"]
+        dict_sales = {key: self.dict_release.data[key] for key in cols_sales if key in dict_data}
+        df_stats = pd.DataFrame([self.dict_release.data])
+        has_stats = set(cols_sales).issubset(df_stats.columns)
+        if has_stats:
+            df_stats = df_stats[cols_sales]
+            df_stats["time_value_retrieved"] = dt.datetime.now()
+            df_stats = df_stats.rename(
+                columns={
+                    "id": "id_release",
+                    "num_for_sale": "qty_for_sale",
+                    "lowest_price": "amt_price_lowest",
+                }
+            )
         dict_community = {
-            key: self.d_release.data["community"][key] for key in ["have", "want"]
+            key: self.dict_release.data["community"][key] for key in ["have", "want"]
         }
         df_community = pd.DataFrame([dict_community])
         df_community = df_community.rename(
