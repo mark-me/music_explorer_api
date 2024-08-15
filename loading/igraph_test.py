@@ -10,9 +10,9 @@ import networkx as nx
 from pyvis.network import Network
 from tqdm import tqdm
 
-import derive as _derive
+import app_loader.discogs.derive as _derive
 import db_utils as _db_utils
-import db_writer as _db_writer
+import app_loader.discogs.db_writer as _db_writer
 import db_reader as _db_reader
 
 with open(r'config.yml') as file:
@@ -175,7 +175,7 @@ db.create_distances()
 # Select random most similar artist from most specific cluster
 # Select random dissimilar artist (from other dendrogram branch)
 
--- SQLite
+## SQLite
 # CREATE TEMPORARY TABLE artist_cluster_branch AS
 # SELECT id_artist,
 #     name_artist,

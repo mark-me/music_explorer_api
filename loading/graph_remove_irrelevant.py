@@ -1,17 +1,12 @@
-import itertools
 import yaml
 import sqlite3
-import numpy as np
 import pandas as pd
 import igraph as ig
-import networkx as nx
-from pyvis.network import Network
-from tqdm import tqdm
 from collections import Counter
 
-import derive as _derive
-import db_writer as _db_writer
-import db_reader as _db_reader
+import app_loader.discogs.derive as _derive
+import app_loader.discogs.db_writer as _db_writer
+import app_loader.discogs.db_reader as _db_reader
 
 with open(r'config.yml') as file:
     config = yaml.load(file, Loader=yaml.FullLoader)
@@ -27,7 +22,7 @@ class Database(_db_reader._DBStorage):
         sql_file = open("loading/sql/extract_artist_relations.sql")
         sql_as_string = sql_file.read()
         cursor.executescript(sql_as_string)
-        
+
 def artist_vertices(db_file: str) -> pd.DataFrame:
     sql = "SELECT id_artist, MAX(in_collection) AS in_collection\
             FROM (\
@@ -44,7 +39,7 @@ def artist_vertices(db_file: str) -> pd.DataFrame:
             GROUP BY id_artist"
     db_con = sqlite3.connect(db_file)
     df_vertices = pd.read_sql_query(sql=sql, con=db_con)
-    db_con.close() 
+    db_con.close()
     return df_vertices
 
 artists = _db_reader.Artists(db_file=db_file)
@@ -63,7 +58,7 @@ for vtx in vtx_collection:
     vtx_connectors = graph_all.get_shortest_paths(vtx, to=vtx_collection)
     vtx_connectors = [x for l in vtx_connectors for x in l]
     vtx_connectors_all = list(set(vtx_connectors + vtx_connectors_all))
-    
+
 vtx = ig.VertexSeq(graph_all, vtx_connectors_all)
 vtx['color'] = 'red'
 print(Counter(graph_all.vs['color']))
