@@ -457,6 +457,11 @@ class Release(MasterRelease):
         return df_artists
 
     def stats(self) -> pd.DataFrame:
+        dict_data = self.d_release.data
+        test = self.d_release.status
+        dict_data2 = {
+            key: value for key, value in dict_data.items() if key in {"id", "styles", "status"}
+        }
         df_stats = pd.DataFrame([self.d_release.data])
         df_stats = df_stats[["id", "num_for_sale", "lowest_price"]]
         df_stats["time_value_retrieved"] = dt.datetime.now()
