@@ -1,3 +1,4 @@
+import datetime as dt
 import sqlite3
 
 import pandas as pd
@@ -17,9 +18,11 @@ class Extractor(DBStorage):
     def __init__(self, client_discogs: Client, db_file: str) -> None:
         super().__init__(db_file)
         self.client_discogs = client_discogs
+        self.user = client_discogs.identity()
 
     def start(self) -> None:
         """Starts user's collection processing"""
+        self.collection_value()
         self.collection_items()
         self.artist_set_attributes()
         self.artists_from_collection()
@@ -27,39 +30,52 @@ class Extractor(DBStorage):
         self.create_clusters()
         self.similar_dissimilar()
 
+    def collection_value(self) -> None:
+        """ Collection value"""
+        db_writer = _db_writer.Collection(db_file=self.db_file)
+        collection_value = self.user.collection_value
+        dict_stats = {
+            "time_value_retrieved": dt.datetime.now(),
+            "qty_collection_items": self.user.num_collection,
+            "amt_maximum":collection_value.maximum,
+            "amt_median": collection_value.median,
+            "amt_minumum": collection_value.minimum
+        }
+        db_writer.value(pd.DataFrame([dict_stats]))
+
+
     def collection_items(self) -> None:
         """Process the user's collection items"""
-        user = self.client_discogs.identity()
         db_writer = _db_writer.Collection(db_file=self.db_file)
         db_writer.drop_tables()
-        qty_items = user.collection_folders[0].count
+        qty_items = self.user.collection_folders[0].count
         for item in tqdm(
-            user.collection_folders[0].releases, total=qty_items, desc="Collection items"
+            self.user.collection_folders[0].releases, total=qty_items, desc="Collection items"
         ):
             derive = _derive.CollectionItem(item=item, db_file=self.db_file)
             derive.process()
 
     def __artist_vertices(self) -> pd.DataFrame:
         """Retrieve artists in order to determine where to stop discogs extraction"""
-        sql = "SELECT id_artist, MAX(in_collection) AS in_collection\
-                FROM (  SELECT id_artist, IIF(qty_collection_items > 0, 1, 0) AS in_collection FROM artist\
-                            UNION\
-                        SELECT id_alias, 0 as in_collection from artist_aliases\
-                            UNION\
-                        SELECT id_member, 0 FROM artist_members\
-                            UNION\
-                        SELECT id_group, 0 FROM artist_groups\
-                            UNION\
-                        SELECT id_artist, 0 FROM artist_masters WHERE role IN ('Main', 'Appearance', 'TrackAppearance')\
-                            UNION\
-                        SELECT release_artists.id_artist, MAX(IIF(date_added IS NULL, 0, 1))\
-                        FROM release_artists\
-                        INNER JOIN release\
-                            ON release.id_release = release_artists.id_release\
-                        LEFT JOIN collection_items\
-                            ON collection_items.id_release = release.id_release\
-                        GROUP BY release_artists.id_artist )\
-                GROUP BY id_artist"
+        sql = """SELECT id_artist, MAX(in_collection) AS in_collection
+                FROM (  SELECT id_artist, IIF(qty_collection_items > 0, 1, 0) AS in_collection FROM artist
+                            UNION
+                        SELECT id_alias, 0 as in_collection from artist_aliases
+                            UNION
+                        SELECT id_member, 0 FROM artist_members
+                            UNION
+                        SELECT id_group, 0 FROM artist_groups
+                            UNION
+                        SELECT id_artist, 0 FROM artist_masters WHERE role IN ('Main', 'Appearance', 'TrackAppearance')
+                            UNION
+                        SELECT release_artists.id_artist, MAX(IIF(date_added IS NULL, 0, 1))
+                        FROM release_artists
+                        INNER JOIN release
+                            ON release.id_release = release_artists.id_release
+                        LEFT JOIN collection_items
+                            ON collection_items.id_release = release.id_release
+                        GROUP BY release_artists.id_artist )
+                GROUP BY id_artist"""
         db_con = sqlite3.connect(self.db_file)
         df_vertices = pd.read_sql_query(sql=sql, con=db_con)
         db_con.close()
@@ -67,25 +83,25 @@ class Extractor(DBStorage):
 
     def __artist_edges(self) -> pd.DataFrame:
         """Retrieve artist cooperations in order to determine where to stop discogs extraction"""
-        sql = "SELECT DISTINCT id_artist_from, id_artist_to, relation_type\
-                FROM (  SELECT id_member AS id_artist_from, id_artist as id_artist_to, 'group_member' as relation_type\
-                        FROM artist_members\
-                    UNION\
-                        SELECT id_artist, id_group, 'group_member' FROM artist_groups\
-                    UNION\
-                        SELECT a.id_alias, a.id_artist, 'artist_alias'\
-                        FROM artist_aliases a\
-                        LEFT JOIN artist_aliases b\
-                            ON a.id_artist = b.id_alias AND\
-                                a.id_alias = b.id_artist\
-                        WHERE a.id_artist > b.id_artist OR b.id_artist IS NULL\
-                    UNION\
-                        SELECT a.id_artist, b.id_artist, 'co_appearance'\
-                        FROM release_artists a\
-                        INNER JOIN release_artists b\
-                            ON b.id_release = a.id_release\
-                        WHERE a.id_artist != b.id_artist )\
-                GROUP BY id_artist_from, id_artist_to, relation_type;"
+        sql = """SELECT DISTINCT id_artist_from, id_artist_to, relation_type
+                FROM (  SELECT id_member AS id_artist_from, id_artist as id_artist_to, 'group_member' as relation_type
+                        FROM artist_members
+                    UNION
+                        SELECT id_artist, id_group, 'group_member' FROM artist_groups
+                    UNION
+                        SELECT a.id_alias, a.id_artist, 'artist_alias'
+                        FROM artist_aliases a
+                        LEFT JOIN artist_aliases b
+                            ON a.id_artist = b.id_alias AND
+                                a.id_alias = b.id_artist
+                        WHERE a.id_artist > b.id_artist OR b.id_artist IS NULL
+                    UNION
+                        SELECT a.id_artist, b.id_artist, 'co_appearance'
+                        FROM release_artists a
+                        INNER JOIN release_artists b
+                            ON b.id_release = a.id_release
+                        WHERE a.id_artist != b.id_artist )
+                GROUP BY id_artist_from, id_artist_to, relation_type;"""
         db_con = sqlite3.connect(self.db_file)
         df_edges = pd.read_sql_query(sql=sql, con=db_con)
         db_con.close()
