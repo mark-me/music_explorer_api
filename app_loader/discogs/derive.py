@@ -340,7 +340,7 @@ class Release(MasterRelease):
 
     def process(self) -> None:
         db_writer = _db_writer.Release(db_file=self.db_file)
-        df_stats = self.stats()
+        # df_stats = self.stats()
         exists = db_writer.in_db(id_release=self.dict_release.id)
         if not exists:
             df_release = self.release()
@@ -364,7 +364,7 @@ class Release(MasterRelease):
             db_writer.track_artist(df_artists=df_track_artists)
             db_writer.videos(df_videos=df_videos)
             self.__artists.process()
-        db_writer.stats(df_stats=df_stats)
+        # db_writer.stats(df_stats=df_stats)
 
     def release(self) -> pd.DataFrame:
         df_release = pd.DataFrame([self.dict_release.data])
@@ -411,13 +411,12 @@ class Release(MasterRelease):
             df_labels = pd.concat(labels, axis=0, ignore_index=True)
             df_labels["id_release"] = self.dict_release.id
             df_labels = df_labels[
-                ["id_release", "id", "name", "catno", "thumbnail_url"]
+                ["id_release", "id", "name", "catno"]
             ]
             df_labels = df_label.rename(
                 columns={
                     "id": "id_label",
                     "name": "name_label",
-                    "thumbnail_url": "url_thumbnail",
                 }
             )
         return df_labels

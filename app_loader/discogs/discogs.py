@@ -5,6 +5,7 @@ from discogs_client.exceptions import HTTPError
 
 from discogs.db_utils import ManageDB
 from discogs.extract import Extractor
+from discogs.db_transformer import DBTransform
 from utils import SecretsYAML
 
 logging.basicConfig(
@@ -93,10 +94,15 @@ class Discogs:
         db_manager.create_backup()
         db_file = db_manager.create_load_copy()
 
-        discogs_extractor = Extractor(
-            client_discogs=self.client_discogs,
-            db_file=db_file,
-        )
-        discogs_extractor.start()
+        # # Extract data from Discogs
+        # discogs_extractor = Extractor(
+        #     client_discogs=self.client_discogs,
+        #     db_file=db_file,
+        # )
+        # discogs_extractor.start()
+
+        # Apply transformations on data
+        db_transformer = DBTransform(db_file=db_file)
+        db_transformer.start()
 
         db_manager.replace_db()

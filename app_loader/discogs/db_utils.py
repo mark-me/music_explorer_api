@@ -58,7 +58,8 @@ class DBStorage():
         db_con = sqlite3.connect(self.db_file)
         cursor = db_con.cursor()
         cursor.execute(sql)
-        cursor.close()
+        db_con.commit()
+        db_con.close()
 
     def execute_sql_file(self, file_name: str) -> None:
         db_con = sqlite3.connect(self.db_file)
@@ -85,6 +86,19 @@ class DBStorage():
         does_exist = cursor.fetchone()[0]==1
         db_con.close()
         return does_exist
+
+    def column_exists(self, name_table: str, name_column: str) -> bool:
+        """Checks whether a table column exists"""
+        db_con = sqlite3.connect(self.db_file)
+        cursor = db_con.cursor()
+        columns = [i[1] for i in cursor.execute(f"PRAGMA table_info({name_table})")]
+        return name_column in columns
+
+    def column_add(self, name_table: str, name_column: str, type_data: str) -> None:
+        if not self.column_exists(name_table=name_table, name_column=name_column):
+            db_con = sqlite3.connect(self.db_file)
+            cursor = db_con.cursor()
+            cursor.execute(f"ALTER TABLE {name_table} ADD COLUMN {name_column} {type_data}")
 
     def view_exists(self, name_view: str) -> bool:
         """Checks whether a view exists"""
