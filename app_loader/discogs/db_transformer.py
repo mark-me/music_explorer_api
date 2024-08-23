@@ -1,4 +1,8 @@
+import igraph as ig
+import pandas as pd
+
 from discogs.db_utils import DBStorage
+import discogs.db_writer as _db_writer
 
 
 class DBTransform(DBStorage):
@@ -80,22 +84,94 @@ class DBTransform(DBStorage):
             """
             self.execute_sql(sql=sql_statement)
         list_value_part = [
-            "piano", "vocal", "perform", "bass", "viol", "drum", "keyboard", "guitar", "sax",
-            "music", "written", "arrange", "lyric", "word", "compose", "song", "accordion",
-            "chamberlin", "clarinet", "banjo", "band", "bongo", "bell", "bouzouki", "brass",
-            "cello", "cavaquinho", "celest", "choir", "chorus", "handclap", "conduct", "conga",
-            "percussion", "trumpet", "cornet", "djembe", "dobro", "organ", "electron", "horn",
-            "fiddle", "flute", "recorder", "glocken", "gong", "guest", "vibra", "harmonium",
-            "harmonica", "harp", "beatbox", "leader", "loop", "MC", "mellotron", "melod",
-            "mixed", "oboe", "orchestra", "recorded", "remix", "saw", "score", "sitar",
-            "strings", "synth", "tabla", "tambourine", "theremin", "timbales", "timpani",
-            "whistle", "triangle", "trombone", "tuba", "vocoder", "voice", "phone", "woodwind",
+            "piano",
+            "vocal",
+            "perform",
+            "bass",
+            "viol",
+            "drum",
+            "keyboard",
+            "guitar",
+            "sax",
+            "music",
+            "written",
+            "arrange",
+            "lyric",
+            "word",
+            "compose",
+            "song",
+            "accordion",
+            "chamberlin",
+            "clarinet",
+            "banjo",
+            "band",
+            "bongo",
+            "bell",
+            "bouzouki",
+            "brass",
+            "cello",
+            "cavaquinho",
+            "celest",
+            "choir",
+            "chorus",
+            "handclap",
+            "conduct",
+            "conga",
+            "percussion",
+            "trumpet",
+            "cornet",
+            "djembe",
+            "dobro",
+            "organ",
+            "electron",
+            "horn",
+            "fiddle",
+            "flute",
+            "recorder",
+            "glocken",
+            "gong",
+            "guest",
+            "vibra",
+            "harmonium",
+            "harmonica",
+            "harp",
+            "beatbox",
+            "leader",
+            "loop",
+            "MC",
+            "mellotron",
+            "melod",
+            "mixed",
+            "oboe",
+            "orchestra",
+            "recorded",
+            "remix",
+            "saw",
+            "score",
+            "sitar",
+            "strings",
+            "synth",
+            "tabla",
+            "tambourine",
+            "theremin",
+            "timbales",
+            "timpani",
+            "whistle",
+            "triangle",
+            "trombone",
+            "tuba",
+            "vocoder",
+            "voice",
+            "phone",
+            "woodwind",
         ]
         last_value = list_value_part.pop(-1)
         sql_start = "UPDATE role SET as_edge = 1 WHERE "
         sql_statement = (
             sql_start
-            + "".join(f"""role LIKE "%{value_part}%" OR """ for value_part in list_value_part)
+            + "".join(
+                f"""role LIKE "%{value_part}%" OR """ for value_part in list_value_part
+            )
             + f"""role LIKE "%{last_value}%" """
         )
         self.execute_sql(sql=sql_statement)
@@ -208,8 +284,183 @@ class DBTransform(DBStorage):
                 GROUP BY id_artist_from, id_artist_to, relation_type;"""
         self.execute_sql(sql=sql_statement)
 
-    def artist_graph(self) -> None:
-        pass
+    def __extract_artist_to_ignore(self) -> None:
+        """Define which artists to exclude from discogs extraction"""
+        df_vertices = self.read_table(name_table="artist_vertex")
+        df_edges = self.read_table(name_table="artist_edge")
+        graph = ig.Graph.DataFrame(
+            edges=df_edges,
+            directed=False,
+            # vertices=df_vertices,
+        )
+        # Select relevant vertices
+        vtx_collection = graph.vs.select(in_collection_eq=1)
+        vtx_relevant = []
+        for vtx in vtx_collection:
+            vtx_neighbors = graph.neighborhood(
+                vertices=vtx, order=2
+            )  # Only query those that have less than 3 steps
+            vtx_neighbors = list(set(vtx_neighbors))
+            vtx_relevant = list(set(vtx_neighbors + vtx_relevant))
+            vtx_connectors = graph.get_shortest_paths(
+                vtx, to=vtx_collection
+            )  # Vertices that connect artists in the collection
+            vtx_connectors = [x for l in vtx_connectors for x in l]
+            vtx_relevant = list(set(vtx_connectors + vtx_relevant))
+        # Get vertices to ignore
+        vtx_to_exclude = list(set(graph.vs.indices) - set(vtx_relevant))
+        df_ignore = pd.DataFrame({"id_artist": graph.vs[vtx_to_exclude]["name"]})
+        db_writer = _db_writer.Artists(db_file=self.db_file)
+        db_writer.ignore_list(df_ignore=df_ignore)
+
+    def __get_artist_graph(self) -> None:
+        lst_edges = self.read_sql(
+            sql="SELECT * FROM artist_relations WHERE id_artist_from != id_artist_to"
+        ).to_dict(orient="records")
+        lst_vertices = self.read_sql(
+            sql="SELECT *, IIF(qty_collection_items > 0, 1, 0) AS in_collection FROM artist"
+        ).to_dict(orient="records")
+        graph = ig.Graph.DictList(
+            vertices=lst_vertices,
+            edges=lst_edges,
+            vertex_name_attr="id_artist",
+            edge_foreign_keys=("id_artist_from", "id_artist_to"),
+        )
+        vtx_collection = graph.vs.select(in_collection_eq=1)
+        vtx_connectors_all = []
+        for vtx in vtx_collection:
+            # Only query those that have less than 3 steps
+            vtx_neighbors = graph.neighborhood(vertices=vtx, order=2)
+            vtx_neighbors = list(set(vtx_neighbors))
+            vtx_connectors_all = list(set(vtx_neighbors + vtx_connectors_all))
+            # Integrate connectors
+            vtx_connectors = graph.get_shortest_paths(vtx, to=vtx_collection)
+            vtx_connectors = [x for l in vtx_connectors for x in l]
+            vtx_connectors_all = list(set(vtx_connectors + vtx_connectors_all))
+        vtx_to_exclude = list(set(graph.vs.indices) - set(vtx_connectors_all))
+        graph.delete_vertices(vtx_to_exclude)
+        return graph
+
+    def __cluster_component(self, graph_component: ig.Graph) -> pd.DataFrame:
+        idx_community_start = 0
+        graph_component.vs["id_community_from"] = idx_community_start
+        # Queue for processing graphs, keeping track level in community tree and relationships between branches
+        lst_processing_queue = [{"graph": graph_component, "tree_level": 0}]
+        # For each sub graph until none in the list
+        qty_graphs_queued = len(
+            lst_processing_queue
+        )  # Number of graphs in the community tree
+        lst_communities = []  # Data-frames with data for a processed graph
+        while qty_graphs_queued > 0:
+            dict_queue = lst_processing_queue.pop(0)
+            graph = (
+                dict_queue.get("graph")
+            ).simplify()  # Remove self referential and double links
+            tree_level = dict_queue.get("tree_level")
+            qty_collection_items = sum(graph.vs["in_collection"])
+            if (
+                qty_collection_items > 2
+            ):  # Only determine communities if the number of vertices is higher than x
+                cluster_hierarchy = graph.community_fastgreedy()  # communities
+                # Setting maximum and minimum of number of clusters
+                qty_clusters = (
+                    15
+                    if cluster_hierarchy.optimal_count > 15
+                    else cluster_hierarchy.optimal_count
+                )
+                qty_clusters = qty_clusters if qty_clusters > 2 else 2
+                cluster_communities = cluster_hierarchy.as_clustering(
+                    n=qty_clusters
+                )  # Determine communities
+                community_membership = cluster_communities.membership
+                communities = set(community_membership)
+                eigenvalue = []
+                for community in communities:
+                    graph_sub = cluster_communities.subgraph(community)
+                    graph_sub.vs["id_community_from"] = [
+                        community + (idx_community_start + 1)
+                    ] * len(graph_sub.vs)
+                    lst_processing_queue.append(
+                        {"graph": graph_sub.copy(), "tree_level": tree_level + 1}
+                    )
+                    eigenvalue = eigenvalue + graph_sub.eigenvector_centrality(
+                        directed=False
+                    )  # Calculate eigenvalue per sub_graph
+                # Make sure community numbers are unique
+                community_membership = [
+                    i + (idx_community_start + 1) for i in community_membership
+                ]
+                idx_community_start = max(community_membership)
+                lst_communities.append(
+                    pd.DataFrame(
+                        {
+                            "id_artist": graph.vs["id_artist"],
+                            "name_artist": graph.vs["name_artist"],
+                            "in_collection": graph.vs["in_collection"],
+                            "qty_collection_items": graph.vs["qty_collection_items"],
+                            "id_hierarchy": [tree_level] * len(graph.vs),
+                            "id_community_from": graph.vs["id_community_from"],
+                            "id_community": community_membership,
+                            "eigenvalue": eigenvalue,
+                        }
+                    )
+                )
+            qty_graphs_queued = len(lst_processing_queue)
+        return pd.concat(lst_communities, axis=0, ignore_index=True)
+
+
+    def create_clusters(self) -> None:
+        graph_all = self.__get_artist_graph()
+        # Cluster all components
+        lst_components = graph_all.decompose()  # Decompose graph
+        lst_dendrogram = []
+        for component in lst_components:
+            if sum(component.vs["in_collection"]) <= 2:
+                qty_vertices = len(component.vs)
+                df_dendrogram = pd.DataFrame(
+                    {
+                        "id_artist": component.vs["id_artist"],
+                        "name_artist": component.vs["name_artist"],
+                        "in_collection": component.vs["in_collection"],
+                        "qty_collection_items": component.vs["qty_collection_items"],
+                        "id_hierarchy": [0] * qty_vertices,
+                        "id_community_from": [0] * qty_vertices,
+                        "id_community": [1] * qty_vertices,
+                        "eigenvalue": component.eigenvector_centrality(directed=False),
+                    }
+                )
+            else:
+                df_dendrogram = self.__cluster_component(component)
+            lst_dendrogram.append(df_dendrogram)
+        # Making all community id's unique across the dendrograms and add root to connect to components
+        community_max = 0
+        for i in range(len(lst_dendrogram)):
+            df_component = lst_dendrogram[i]
+            df_component["id_community"] = (
+                df_component["id_community"] + community_max + 1
+            )
+            # If a component has multiple sub communities add an extra vertex so they will not be added to the root directly
+            if len(set(df_component["id_community_from"])) > 1:
+                df_component.loc[:, "id_community_from"] = (
+                    df_component.loc[:, "id_community_from"] + community_max + 1
+                )
+                df_root = df_component.loc[df_component["id_hierarchy"] == 0].copy()
+                df_root["id_community"] = df_root["id_community_from"]
+                df_root["id_community_from"] = 0
+                df_component.loc[:, "id_hierarchy"] = (
+                    df_component.loc[:, "id_hierarchy"] + 1
+                )
+                df_component = pd.concat(
+                    [df_component, df_root], axis=0, ignore_index=True
+                )
+            community_max = max(df_component["id_community"])
+            lst_dendrogram[i] = df_component
+        df_hierarchy = pd.concat(lst_dendrogram, axis=0, ignore_index=True)
+        db_writer = _db_writer.ArtistNetwork(db_file=self.db_file)
+        db_writer.community_hierarchy(df_hierarchy=df_hierarchy)
+        # self.execute_sql_file(
+        #     file_name="loading/sql/extract_community_dendrogram.sql"
+        # )  # Create a summary of the clustering hierarchy
 
     def start(self) -> None:
         self.artist_is_groups()
@@ -219,4 +470,4 @@ class DBTransform(DBStorage):
         self.artist_relationships()
         self.artist_vertices()
         self.artist_edges()
-        self.artist_graph()
+        self.create_clusters()

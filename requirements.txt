@@ -20,6 +20,7 @@ mdurl==0.1.2
 numpy==2.0.1
 oauthlib==3.2.2
 pandas==2.2.2
+pycairo==1.26.1
 pydantic==2.8.2
 pydantic_core==2.20.1
 Pygments==2.18.0
