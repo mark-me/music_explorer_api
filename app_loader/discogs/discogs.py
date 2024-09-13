@@ -94,12 +94,13 @@ class Discogs:
         db_manager.create_backup()
         db_file = db_manager.create_load_copy()
 
-        # # Extract data from Discogs
-        # discogs_extractor = Extractor(
-        #     client_discogs=self.client_discogs,
-        #     db_file=db_file,
-        # )
-        # discogs_extractor.start()
+        # Extract data from Discogs
+        discogs_extractor = Extractor(
+            client_discogs=self.client_discogs,
+            db_file=db_file,
+        )
+        discogs_extractor.collection_value()
+        discogs_extractor.collection_items()
 
         # Apply transformations on data
         db_transformer = DBTransform(db_file=db_file)

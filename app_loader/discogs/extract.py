@@ -57,7 +57,7 @@ class Extractor(DBStorage):
 
     def __extract_artist_to_ignore(self) -> None:
         """Define which artists to exclude from discogs extraction"""
-        df_vertices = self.__artist_vertices()
+        df_vertices = self.read_table(name_table="artist_vertex")
         df_edges = self.__artist_edges()
         graph = ig.Graph.DataFrame(
             edges=df_edges,
@@ -126,6 +126,11 @@ class Extractor(DBStorage):
             artists.append(self.client_discogs.artist(id=row["id_artist"]))
         derive = _derive.Artists(artists=artists)
         derive.process_masters()
+
+    def artist(self, id_artist: int) -> None:
+        artist = self.client_discogs.artist(id=id_artist)
+        derive = _derive.Artists(artists=artist, db_file=self.db_file)
+        derive.process()
 
     def similar_dissimilar(self) -> None:
         self.execute_sql_file(file_name="loading/sql/spinder.sql")
