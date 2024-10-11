@@ -1,0 +1,20 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"name": "API",
+			"path": "../app_api"
+		},
+		{
+			"name": "Data loader",
+			"path": "../app_loader"
+		},
+		{
+			"name": "Explorer App",
+			"path": "../app_explorer"
+		}
+	],
+	"settings": {}
+}
