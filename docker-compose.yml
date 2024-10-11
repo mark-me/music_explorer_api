@@ -13,4 +13,36 @@ services:
     volumes:
       - ${DIR_DATA}:/data
     restart: unless-stopped
+  nginx:
+    container_name: nginx
+    build:
+      context: ./nginx
+    ports:
+      - 80:80
+      - 443:443
+    environment:
+      DOMAIN_NAME: $DOMAIN_NAME
+    volumes:
+      - /data/certbot/conf:/etc/letsencrypt
+      - /data/certbot/www:/var/www/certbot
+  certbot-auto:
+    container_name: certbot
+    build:
+      context: ./certbot-auto
+    volumes:
+      - /data/certbot/conf:/etc/letsencrypt
+      - /data/certbot/www:/var/www/certbot
+    environment:
+      DOMAIN_NAME: ${DOMAIN_NAME}
+      EMAIL_ADDRESS: ${EMAIL_ADDRESS}
+  duckdns:
+      image: ghcr.io/linuxserver/duckdns:version-369fbd5c
+      container_name: duckdns
+      environment:
+        - PUID=1000
+        - PGID=1000
+        - TZ=Europe/Amsterdam
+        - SUBDOMAINS=kna-historie
+        - TOKEN=11afd534-1ff8-4779-989d-1bf4f25561f3
+        - LOG_FILE=false #optional
 
