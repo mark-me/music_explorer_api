@@ -1,6 +1,6 @@
 # music_explorer_api
 
-This repository is part of a project where people can explore their music collection using a web-interface.
+A suite of applications that aspires to enable you interacting with your collection as registered on Discogs.
 
 The front end will be created by [Marcel Varkevisser](https://github.com/marcelvark) and can be found at ....
 
@@ -24,7 +24,7 @@ Now... If you are still interested and want to try this project out yourself, le
 
 This project is quite big in scope in terms of developing a UI, so we take a short detour by introducing a new app: [Spindler](https://marcel.website/spindler).
 
-When I clean/reorder my collection I too often come across records of which I think: GOD THIS IS GOOD: I NEED TO SPIN THIS! And I mean _too_ often. I quickly get snowed under with those thoughts, while I need to finish the task at hand: reordering my collection.... What if I can create this rediscovery of my own collection with a kind of Tinder interface? Random suggestion and an option to get more of this or reject the choice and go in a totally different direction? OK.... I know this isn't how Tinder actually works, but the analogy worked for me....
+When I clean/reorder my collection I too often come across records of which I think: "GOD THIS IS GOOD! I NEED TO SPIN THIS!". And I mean _too_ often. I quickly get snowed under with those thoughts, while I need to finish the task at hand: reordering my collection.... What if I can create this experience of rediscovering my own collection with a kind of Tinder interface? Random suggestions and an option to get more of this or reject the choice and go in a totally different direction? OK.... I know this isn't how Tinder actually works, but it's the analogy that worked for me....
 
 So I am introducing a new API endpoint to support this kind of functionality. It will process a request as follows:
 * Get random artist or requested artist
@@ -110,3 +110,69 @@ docker push ghcr.io/mark-me/musicexplorer:v0.0.1
 # Project board
 
 [Kanban](https://github.com/users/mark-me/projects/1)
+
+---
+
+# Music Collection Toolkit for Discogs Users
+
+Welcome to the **Music Collection Toolkit**, a suite of Python applications designed for music collectors who manage their collections on [Discogs.com](https://www.discogs.com/). This repository provides tools to help you explore, analyze, and interact with your collection data in new ways.
+
+## Features
+
+- **Data Loading**: Easily load and import your Discogs collection data into your preferred exploration environment.
+- **API Service**: A powerful API to query and retrieve insights about your music collection. Get details like genres, formats, value estimates, and much more.
+- **Graphical User Interface (GUI)**: An intuitive interface to browse and visualize your music collection, enabling you to filter by artist, genre, or format.
+
+## Requirements
+
+- Docker
+- Docker Compose
+
+## Installation
+
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/yourusername/music-collection-toolkit.git
+   cd music-collection-toolkit
+   ```
+
+2. Set up your Discogs API key by following their [API documentation](https://www.discogs.com/developers/), and add your credentials to the `.env` file in the root of the project:
+   ```
+   DISCOGS_API_KEY=your_api_key
+   ```
+
+3. Build and start the services using Docker Compose:
+   ```bash
+   docker-compose up --build
+   ```
+
+   This will start all services, including the data loader, API service, and GUI.
+
+## Usage
+
+### Data Loading
+Once the services are up, you can load your Discogs data into the environment using:
+```bash
+curl -X POST http://localhost:5000/load_data
+```
+
+### API Service
+The API service will be available at `http://localhost:5000`. You can query your collection via the API, for example:
+```bash
+curl http://localhost:5000/collection/summary
+```
+
+### GUI Browser
+Access the GUI by navigating to `http://localhost:8080` in your web browser. From there, you can browse and explore your music collection.
+
+## Contributing
+
+Contributions are welcome! Please submit pull requests or open an issue to discuss potential changes.
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+---
+
+This version makes use of Docker Compose to streamline the installation and service management process.
