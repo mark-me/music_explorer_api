@@ -13,8 +13,8 @@
 			"path": "../app_loader"
 		},
 		{
-			"name": "Explorer App",
-			"path": "../app_explorer"
+			"name": "Browser App",
+			"path": "../app_browser"
 		}
 	],
 	"settings": {}

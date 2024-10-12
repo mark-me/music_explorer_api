@@ -1,5 +1,5 @@
 #!/bin/bash
-VERSION_ID='v0.0.2'
+VERSION_ID='v0.0.1'
 PUSH_IMAGES=false  # Default value for pushing images
 
 # Check for the optional parameter
@@ -19,14 +19,14 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Pull docker images
-docker pull ghcr.io/mark-me/musicexplorer:$VERSION_ID
-docker pull ghcr.io/mark-me/musicexplorer:latest
+docker pull ghcr.io/mark-me/music_explorer_browser:$VERSION_ID
+docker pull ghcr.io/mark-me/music_explorer_browser:latest
 
 # App
-docker build -t ghcr.io/mark-me/musicexplorer:$VERSION_ID -t ghcr.io/mark-me/musicexplorer:latest .
+docker build -t ghcr.io/mark-me/music_explorer_browser:$VERSION_ID -t ghcr.io/mark-me/music_explorer_browser:latest .
 
 # Optionally push Docker images
 if [ "$PUSH_IMAGES" = true ]; then
-    docker push ghcr.io/mark-me/musicexplorer:$VERSION_ID
-    docker push ghcr.io/mark-me/musicexplorer:latest
+    docker push ghcr.io/mark-me/music_explorer_browser:$VERSION_ID
+    docker push ghcr.io/mark-me/music_explorer_browser:latest
 fi

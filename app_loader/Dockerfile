@@ -13,6 +13,6 @@ RUN rm .env
 VOLUME /app/config
 VOLUME /app/artist_images
 
-EXPOSE 5000
+EXPOSE 5001
 
 CMD ["./entrypoint.sh"]
