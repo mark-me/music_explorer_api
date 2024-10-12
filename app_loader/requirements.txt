@@ -1,0 +1,17 @@
+certifi==2024.8.30
+charset-normalizer==3.4.0
+idna==3.10
+igraph==0.11.6
+numpy==2.1.2
+oauthlib==3.2.2
+pandas==2.2.3
+python-dateutil==2.9.0.post0
+python3-discogs-client==2.7
+pytz==2024.2
+PyYAML==6.0.2
+requests==2.32.3
+six==1.16.0
+texttable==1.7.0
+tqdm==4.66.5
+tzdata==2024.2
+urllib3==2.2.3
