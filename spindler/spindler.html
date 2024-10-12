@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#000" />
+<link rel="icon" href="spindler/favicon.svg" type="image/svg+xml">
+<title>Spindler</title>
+<style>
+
+* { margin: 0; padding: 0; color: dimgray; font-family: sans-serif; box-sizing: border-box; }
+
+body:not(.loading) #splash { display: none; }
+#splash                    { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff7; }
+/* #splash                { background-image: url(spindler/logo.svg); background-position: center center; background-size: 8rem 8rem; background-repeat: no-repeat; } */
+
+main                       { padding: 0 0.5rem; margin: 0 auto; max-width: 25rem; position: relative; }
+
+header                { background-image: url(spindler/logo.svg); background-position: center center; background-size: 8rem 8rem; background-repeat: no-repeat; }
+header                { position: relative; width: 100%; height: 0; padding-bottom: 100%; }
+header img            { position: absolute; width: 100%; }
+header img:not([src]) { visibility: hidden; }
+
+section { padding: 1rem 0; }
+
+footer           { margin: 1rem 0; display: flex; flex-direction: column; gap: 1rem; }
+footer > div     { display: grid; grid-template-columns: auto 1fr; gap: 1rem; align-items: center; }
+footer > div img { width: 5rem; height: auto }
+
+nav     { padding: 0.5rem 0; display: grid; grid-template-columns: auto auto auto auto; gap: 2.5rem; }
+nav img { width: 100%; height: 100%; }
+
+/*
+	API: https://musicexplorer.mr-black.net/docs#/
+ */
+
+</style>
+</head>
+<body>
+
+<main>
+	<nav>
+		<img id="remove"    src="spindler/cross.svg"> </button>
+		<img id="store"     src="spindler/plus.svg">  </button>
+		<img id="different" src="spindler/dice.svg">  </button>
+		<img id="similar"   src="spindler/pawns.svg"> </button>
+	</nav>
+
+	<header>
+		<img id="cover">
+	</header>
+
+	<section>
+		<h2 id="artist" >&nbsp;</h2>
+		<h3 id="release">&nbsp;</h3>
+	</section>
+
+	<footer>
+		<template>
+			<div class="pick">
+				<img class="thumbnail" src="">
+				<span>
+					<h3 class="release"></h3>
+					<h4 class="artist"> </h4>
+				</span>
+			</div>
+		</template>
+	</footer>
+</main>
+
+<!--
+<section>
+	<template></template>
+	<div class="pick">
+		<img class="thumbnail" src="https://i.discogs.com/ik61kK86c_RzBE3E-3YbWGH_HL56i63_i3sI5KbYFM4/rs:fit/g:sm/q:40/h:150/w:150/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTYzNTA4/NzgtMTQxNzEwODcw/Mi01MTg5LmpwZWc.jpeg">
+		<span>
+			<h1 class="release">It's A Wonderful Life</h1>
+			<h2 class="artist">Sparklehorse</h2>
+		</span>
+	</div>
+</section>
+-->
+
+<div id="splash"></div>
+
+<script>
+/*
+[
+  {
+    "id_release": 6350878,
+    "name_artist": "Sparklehorse",
+    "id_artist_similar": 179554,
+    "url_cover": "https://i.discogs.com/QRXxJXIluucGZpQTGpxvwKKbd0-TxvMudb814fQ2DrM/rs:fit/g:sm/q:90/h:590/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTYzNTA4/NzgtMTQxNzEwODcw/Mi01MTg5LmpwZWc.jpeg",
+    "id_artist_dissimilar": 255137,
+    "id_artist": 12372,
+    "name_release": "It's A Wonderful Life",
+    "url_thumbnail": "https://i.discogs.com/ik61kK86c_RzBE3E-3YbWGH_HL56i63_i3sI5KbYFM4/rs:fit/g:sm/q:40/h:150/w:150/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTYzNTA4/NzgtMTQxNzEwODcw/Mi01MTg5LmpwZWc.jpeg"
+  }
+]
+*/
+/**/
+const DOM = {
+	first(css, root = document) { return root.querySelector(css) }, //:DOM.first
+	all  (css, root = document) { return Array.from(root.querySelectorAll(css)) } //:DOM.all
+}
+
+
+let Spindle = null
+
+
+function spindle(id_artist) {
+	DOM.first('body').classList.add('loading')
+	const url = 'https://musicexplorer.mr-black.net/spinder/' + (id_artist ? `?id_artist=${ id_artist }` : '')
+
+	AJAX.post(url, {})
+		.then(response => {
+			Spindle = response[0]
+
+			DOM.first('#cover').src = Spindle.url_cover
+			DOM.first('#artist').textContent = Spindle.name_artist
+			DOM.first('#release').textContent = Spindle.name_release
+			DOM.first('body').classList.remove('loading')
+
+			console.log(Spindle)
+		})
+}
+
+function different () { spindle(Spindle.id_artist_dissimilar) }
+function similar   () { spindle(Spindle.id_artist_similar) }
+
+
+function list() {
+	const footer = DOM.first('footer')
+
+	for (const item of DOM.all('*:not(template)', footer)) {
+		item.remove()
+	}
+
+	const template = DOM.first('template', footer)
+	const picks = (localStorage.Spindler ? JSON.parse(localStorage.Spindler) : []).reverse()
+	picks.forEach((spindle, index) => {
+		const clone = template.content.cloneNode(true)
+
+		DOM.first('img', clone).src = spindle.url_thumbnail
+		DOM.first('.artist', clone).textContent = spindle.name_artist
+		DOM.first('.release', clone).textContent = spindle.name_release
+
+		footer.appendChild(clone)
+	})
+}
+
+
+window.onclick = function(event) {
+	{
+		const button = event.target.closest('nav > img')
+		if (button) {
+			const picks = (localStorage.Spindler ? JSON.parse(localStorage.Spindler) : [])
+			const index = picks.findIndex(s => s.id_release == Spindle.id_release)
+
+			switch (button.id) {
+				case 'similar':
+					similar()
+					break
+
+				case 'different':
+					different()
+					break
+
+				case 'store':
+					if (index == -1) {
+						picks.push(Spindle)
+						localStorage.Spindler = JSON.stringify(picks)
+						list()
+					}
+					break
+
+				case 'remove':
+					if (index != -1) {
+						picks.splice(index, 1)
+						localStorage.Spindler = JSON.stringify(picks)
+						spindle()
+						list()
+					}
+					break
+			}
+		}
+	}
+
+	{
+		const pick = event.target.closest('.pick')
+		if (pick) {
+			const
+				list  = DOM.all('.pick'),
+				index = list.indexOf(pick)
+
+			Spindle = JSON.parse(localStorage.Spindler).reverse()[index]
+			DOM.first('#cover').src = Spindle.url_cover
+			window.scrollTo(null, 0)
+		}
+	}
+}
+
+
+/**/
+window.onload = async function(event) {
+	spindle()
+	list()
+}
+
+
+/**/
+const AJAX = {
+	post(path, data) {
+		return fetch(path, {
+			method: 'post',
+			body: JSON.stringify(data)
+
+		}).then(function(response) {
+			if (response.status == 200) {
+				const type = response.headers.get("content-type")
+				if (type) {
+					if (['application/json'].includes(type))
+						return response.json()
+					else
+						return response.text()
+				}
+			}
+
+		}).catch(function(error) {
+			console.error(error)
+		})
+	},
+
+
+	get(path) {
+		return fetch(path, {
+			method: 'get'
+
+		}).then(function(response) {
+			if (response.status == 200) {
+				const type = response.headers.get("content-type")
+				if (type) {
+					if (['application/json'].includes(type))
+						return response.json()
+					else
+						return response.text()
+				}
+			}
+
+		}).catch(function(error) {
+			console.error((new Error()).stack)
+		})
+	}
+}
+</script>
+</body>
+</html>
