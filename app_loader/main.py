@@ -26,7 +26,7 @@ async def welcome_page(request: Request):
     content = """
     <html>
         <head>
-            <title>The controller welcomes you...</title>
+            <title>This is the API which can be used to grant access to your ...</title>
         </head>
         <body>
             <h1>The API for extracting Discogs information to a local database </h1>

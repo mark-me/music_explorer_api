@@ -10,8 +10,8 @@ RUN pip install --no-cache-dir --upgrade -r requirements.txt
 COPY . .
 RUN rm .env
 
-VOLUME /app/config
-VOLUME /app/artist_images
+VOLUME /data
+VOLUME /data/artist_images
 
 EXPOSE 5001
 

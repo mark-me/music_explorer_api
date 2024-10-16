@@ -6,29 +6,31 @@ services:
     image: ghcr.io/mark-me/music_explorer_loader:v0.0.1
     volumes:
       - ${DIR_DATA}:/data
+    ports:
+      - 5001:5001
     restart: unless-stopped
-  api:
-    image: ghcr.io/mark-me/musicexplorer:v0.0.2
-    container_name: api
-    volumes:
-      - ${DIR_DATA}:/data
-    restart: unless-stopped
-  browser:
-    image: ghcr.io/mark-me/music_explorer_browser:v0.0.1
-    container_name: browser
-    depends_on:
-      - api
-    restart: unless-stopped
-  duckdns:
-      image: ghcr.io/linuxserver/duckdns:version-369fbd5c
-      container_name: duckdns
-      environment:
-        - PUID=1000
-        - PGID=1000
-        - TZ=Europe/Amsterdam
-        - SUBDOMAINS=music-explorer
-        - TOKEN=${DUCKDNS_TOKEN}
-        - LOG_FILE=false #optional
+  # api:
+  #   image: ghcr.io/mark-me/musicexplorer:v0.0.2
+  #   container_name: api
+  #   volumes:
+  #     - ${DIR_DATA}:/data
+  #   restart: unless-stopped
+  # browser:
+  #   image: ghcr.io/mark-me/music_explorer_browser:v0.0.1
+  #   container_name: browser
+  #   depends_on:
+  #     - api
+  #   restart: unless-stopped
+  # duckdns:
+  #     image: ghcr.io/linuxserver/duckdns:version-369fbd5c
+  #     container_name: duckdns
+  #     environment:
+  #       - PUID=1000
+  #       - PGID=1000
+  #       - TZ=Europe/Amsterdam
+  #       - SUBDOMAINS=music-explorer
+  #       - TOKEN=${DUCKDNS_TOKEN}
+  #       - LOG_FILE=false #optional
   # swag:
   #   image: lscr.io/linuxserver/swag
   #   container_name: swag

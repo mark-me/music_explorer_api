@@ -15,7 +15,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
 COPY . .
-RUN rm .env
+#RUN rm .env
 
 VOLUME /app/config
 VOLUME /app/artist_images
