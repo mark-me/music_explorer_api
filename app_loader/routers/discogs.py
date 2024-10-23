@@ -4,7 +4,7 @@ from dotenv import dotenv_values
 from pydantic import BaseModel
 import os
 
-from discogs.discogs import Discogs
+from etl.discogs import Discogs
 
 config = {
     **dotenv_values(".env"),  # load shared development variables

@@ -3,9 +3,9 @@ import logging
 import discogs_client
 from discogs_client.exceptions import HTTPError
 
-from discogs.db_utils import ManageDB
-from discogs.extract import Extractor
-from discogs.db_transformer import DBTransform
+from etl.db_utils import ManageDB
+from etl.extract import Extractor
+from etl.db_transformer import DBTransform
 from utils import SecretsYAML
 
 logging.basicConfig(

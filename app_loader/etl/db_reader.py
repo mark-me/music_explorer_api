@@ -1,7 +1,7 @@
 import pandas as pd
 import sqlite3
 
-from discogs.db_utils import DBStorage
+from etl.db_utils import DBStorage
 
 
 class Collection(DBStorage):

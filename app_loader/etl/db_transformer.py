@@ -1,9 +1,9 @@
 import igraph as ig
 import pandas as pd
 
-import discogs.extract as _extract
-from discogs.db_utils import DBStorage
-import discogs.db_writer as _db_writer
+import etl.extract as _extract
+from etl.db_utils import DBStorage
+import etl.db_writer as _db_writer
 
 
 class DBTransform(DBStorage):
