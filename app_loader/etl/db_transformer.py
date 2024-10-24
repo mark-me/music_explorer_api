@@ -46,7 +46,6 @@ class DBTransform(DBStorage):
         SET url_thumbnail = ( SELECT url_thumbnail WHERE id_artist = artist.id_artist );
         """
         self.execute_sql(sql=sql_statement)
-        # self.drop_existing_table(name_table="thumbnails")
 
     def __artist_qty_collection_items(self) -> None:
         self.column_add(
@@ -292,7 +291,7 @@ class DBTransform(DBStorage):
         graph = ig.Graph.DataFrame(
             edges=df_edges,
             directed=False,
-            # vertices=df_vertices,
+            vertices=df_vertices,
         )
         # Select relevant vertices
         vtx_collection = graph.vs.select(in_collection_eq=1)

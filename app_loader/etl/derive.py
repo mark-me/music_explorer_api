@@ -5,7 +5,7 @@ import pandas as pd
 from tqdm import tqdm
 from discogs_client.models import Artist, CollectionItemInstance
 
-import etl.db_writer as _db_writer
+import db_writer as _db_writer
 
 
 class Artists:
