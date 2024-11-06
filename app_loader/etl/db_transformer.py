@@ -1,7 +1,6 @@
 import igraph as ig
 import pandas as pd
 
-import etl.extract as _extract
 from etl.db_utils import DBStorage
 import etl.db_writer as _db_writer
 

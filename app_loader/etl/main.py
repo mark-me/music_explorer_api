@@ -1,6 +1,6 @@
 import yaml
-from db_utils import ManageDB
-import extract as _extract
+from etl.db_utils import ManageDB
+import etl.extract as _extract
 
 
 def main():

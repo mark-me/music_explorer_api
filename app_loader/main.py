@@ -1,7 +1,5 @@
 import os
 
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 import uvicorn
