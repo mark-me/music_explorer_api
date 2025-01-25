@@ -27,12 +27,14 @@ This project is quite big in scope in terms of developing a UI, so we take a sho
 When I clean/reorder my collection I too often come across records of which I think: "GOD THIS IS GOOD! I NEED TO SPIN THIS!". And I mean _too_ often. I quickly get snowed under with those thoughts, while I need to finish the task at hand: reordering my collection.... What if I can create this experience of rediscovering my own collection with a kind of Tinder interface? Random suggestions and an option to get more of this or reject the choice and go in a totally different direction? OK.... I know this isn't how Tinder actually works, but it's the analogy that worked for me....
 
 So I am introducing a new API endpoint to support this kind of functionality. It will process a request as follows:
+
 * Get random artist or requested artist
 * Select random collection item
 * Select random most similar artist id from most specific cluster
 * Select random dissimilar artist id (from other cluster dendrogram branch)
 
 The API endpoint will return data with the following information:
+
 * An artist
 * A random release of the artist
 * A random artiest from the same niche
@@ -42,7 +44,7 @@ The API endpoint will return data with the following information:
 
 There are loads of singers that cover the same songs, which could also be considered as some bond....
 
-```
+```sql
 CREATE TEMPORARY TABLE multi_tracks AS
 SELECT title
 FROM release_tracks
@@ -68,28 +70,33 @@ ORDER BY multi_tracks.title;
 ## Creating a virtual environment
 
 First install the virtual environment package:
-```
+
+```bash
 pip3 install virtualenv
 ```
+
 Create a virtual environment
-```
+
+```bash
 virtualenv music_explorer_api
 ```
 
 Activate virtual environment
-```
+
+```bash
 source music_explorer_api/bin/activate
 pip3 install -r requirements.txt
 ```
 
 install package
-```
+
+```bash
 pip3 install
 ```
 
 ### Create requirements.txt
 
-```
+```bash
 pip3 freeze > requirements.txt
 ```
 
@@ -97,13 +104,13 @@ pip3 freeze > requirements.txt
 
 ### Create
 
-```
+```bash
 docker build -t ghcr.io/mark-me/musicexplorer:v0.0.1 .
 ```
 
 ### Push image to github
 
-```
+```bash
 docker push ghcr.io/mark-me/musicexplorer:v0.0.1
 ```
 
@@ -152,17 +159,21 @@ Welcome to the **Music Collection Toolkit**, a suite of Python applications desi
 
 ### Data Loading
 Once the services are up, you can load your Discogs data into the environment using:
+
 ```bash
 curl -X POST http://localhost:5000/load_data
 ```
 
 ### API Service
+
 The API service will be available at `http://localhost:5000`. You can query your collection via the API, for example:
+
 ```bash
 curl http://localhost:5000/collection/summary
 ```
 
 ### GUI Browser
+
 Access the GUI by navigating to `http://localhost:8080` in your web browser. From there, you can browse and explore your music collection.
 
 ## Contributing
