@@ -5,16 +5,12 @@
 			"path": ".."
 		},
 		{
-			"name": "API",
-			"path": "../app_api"
-		},
-		{
-			"name": "Data loader",
-			"path": "../app_loader"
+			"name": "Data provider",
+			"path": "../src/app_loader"
 		},
 		{
 			"name": "Browser App",
-			"path": "../app_browser"
+			"path": "../src/app_browser"
 		},
 		{
 			"name": "Spindler App",

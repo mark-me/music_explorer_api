@@ -14,6 +14,55 @@ Components of this repository:
 * An example of a docker-compose file
 * A conf file for the [swag](https://github.com/linuxserver/docker-swag) reverse proxy
 
+### Current
+
+```mermaid
+flowchart LR
+    api[API]
+    api_querying[Query Routing]
+    data_db[(Music Collection)]
+    authentication_discogs[Discogs Authentication]
+    etl_api[ETL routing]
+    celery_loader[ETL task with Celery]
+    data_discogs[(Discogs Data)]
+
+    api --> api_querying
+    api --> etl_api
+    api_querying --queries--> data_db
+    etl_api --requests--> authentication_discogs
+    etl_api --starts--> celery_loader
+    celery_loader --uses--> authentication_discogs
+    celery_loader --consumes--> data_discogs
+    celery_loader --stores--> data_db
+```
+
+### Future
+
+```mermaid
+flowchart LR
+    api[API]
+    api_querying[Query Routing]
+    data_db[(Music Collection)]
+    authentication_discogs[Discogs Authentication]
+    authentication_lastfm{{Last.fm Authentication}}
+    etl_api[ETL routing]
+    celery_loader[ETL task with Celery]
+    data_discogs[(Discogs Data)]
+    data_lastfm{{Last.fm Data}}
+
+    api --> api_querying
+    api --> etl_api
+    api_querying --queries--> data_db
+    etl_api --requests--> authentication_discogs
+    etl_api --requests--> authentication_lastfm
+    etl_api --starts--> celery_loader
+    celery_loader --uses--> authentication_discogs
+    celery_loader --uses--> authentication_lastfm
+    celery_loader --consumes--> data_discogs
+    celery_loader --consumes--> data_lastfm
+    celery_loader --stores--> data_db
+```
+
 ## A word from the author
 
 This project is the result of another project where I tried a proof of concept in R [discogs_dashboard](https://github.com/mark-me/discogs_dashboard). The goal of this project was being inspired by my own music collection. I was wondering what kind of recommendations I could get from looking at the artists I have in my collection and their collaborations. Having an inkling how graph theory might be useful in this context, I started dabbling with the [igraph](https://igraph.org/) library. I was getting very promising results by using the [edge betweenness clustering](https://igraph.org/r/html/latest/cluster_edge_betweenness.html). Seeing my code was getting really messy and I wanted to increase my Python capabilities I chose to rewrite by using the lessons learned from my R project.
