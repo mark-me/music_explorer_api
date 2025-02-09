@@ -29,11 +29,11 @@ flowchart LR
     api --> api_querying
     api --> etl_api
     api_querying --queries--> data_db
-    etl_api --requests--> authentication_discogs
     etl_api --starts--> celery_loader
     celery_loader --uses--> authentication_discogs
     celery_loader --consumes--> data_discogs
     celery_loader --stores--> data_db
+    etl_api --requests--> authentication_discogs
 ```
 
 ### Future
