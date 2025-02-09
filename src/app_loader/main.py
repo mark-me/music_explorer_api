@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
@@ -9,9 +10,8 @@ from routers import (
     discogs,
 )
 
-file_dot_env = os.path.dirname(os.path.abspath(__file__)) + "/.env"
 config = {
-    **dotenv_values(file_dot_env),  # load shared development variables
+    **dotenv_values(f"{Path(__file__).parent}/.env"),  # load shared development variables
     **os.environ,  # override loaded values with environment variables
 }
 
