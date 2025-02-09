@@ -1,4 +1,4 @@
-# music_explorer_api
+# Music Explorer API
 
 A suite of applications that aspires to enable you interacting with your collection as registered on Discogs.
 
