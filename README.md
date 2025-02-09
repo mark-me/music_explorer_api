@@ -19,10 +19,10 @@ Components of this repository:
 ```mermaid
 flowchart LR
     api[API]
-    api_querying[Query Routing]
+    api_querying[Query Route]
     data_db[(Music Collection)]
     authentication_discogs[Discogs Authentication]
-    etl_api[ETL routing]
+    etl_api[ETL route]
     celery_loader[ETL task with Celery]
     data_discogs[(Discogs Data)]
 
@@ -41,11 +41,11 @@ flowchart LR
 ```mermaid
 flowchart LR
     api[API]
-    api_querying[Query Routing]
+    api_querying[Query Route]
     data_db[(Music Collection)]
     authentication_discogs[Discogs Authentication]
     authentication_lastfm{{Last.fm Authentication}}
-    etl_api[ETL routing]
+    etl_api[ETL Route]
     celery_loader[ETL task with Celery]
     data_discogs[(Discogs Data)]
     data_lastfm{{Last.fm Data}}
