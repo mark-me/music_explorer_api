@@ -3,7 +3,6 @@ from sqlalchemy import or_
 
 from . import database as _database
 from . import models as _models
-from . import schemas as _schemas
 
 
 def create_database():
