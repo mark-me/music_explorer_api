@@ -1,9 +1,9 @@
 import sqlalchemy.orm as _orm
 from sqlalchemy import or_
 
-import app_loader.querying.database as _database
-import app_loader.querying.models as _models
-import app_loader.querying.schemas as _schemas
+from . import database as _database
+from . import models as _models
+from . import schemas as _schemas
 
 
 def create_database():

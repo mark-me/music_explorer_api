@@ -6,7 +6,7 @@ from dotenv import dotenv_values
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
-from routers import discogs_etl, querying
+from routers import discogs, db_query
 
 config = {
     **dotenv_values(f"{Path(__file__).parent}/.env"),  # load shared development variables
@@ -14,8 +14,8 @@ config = {
 }
 
 app = FastAPI()
-app.include_router(discogs_etl.router)
-app.include_router(querying.router)
+app.include_router(discogs.discogs_router)
+app.include_router(db_query.query_router)
 
 app.add_middleware(
     CORSMiddleware,

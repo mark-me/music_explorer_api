@@ -1,2 +1,2 @@
-from .routers import discogs_etl
+from .routers import discogs
 from .routers import querying

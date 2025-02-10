@@ -5,10 +5,10 @@ import igraph as ig
 from tqdm import tqdm
 from discogs_client import Client
 
-from etl.db_utils import DBStorage
-import etl.derive as _derive
-import etl.db_writer as _db_writer
-import etl.db_reader as _db_reader
+from .db_utils import DBStorage
+from . import derive as _derive
+from . import db_writer as _db_writer
+from . import db_reader as _db_reader
 
 
 class Extractor(DBStorage):

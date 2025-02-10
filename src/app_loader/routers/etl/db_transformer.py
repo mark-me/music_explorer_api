@@ -1,8 +1,8 @@
 import igraph as ig
 import pandas as pd
 
-from etl.db_utils import DBStorage
-import etl.db_writer as _db_writer
+from .db_utils import DBStorage
+from .db_writer import Artists, ArtistNetwork
 
 
 class DBTransform(DBStorage):
@@ -309,7 +309,7 @@ class DBTransform(DBStorage):
         # Get vertices to ignore
         vtx_to_exclude = list(set(graph.vs.indices) - set(vtx_relevant))
         df_ignore = pd.DataFrame({"id_artist": graph.vs[vtx_to_exclude]["name"]})
-        db_writer = _db_writer.Artists(db_file=self.db_file)
+        db_writer = Artists(db_file=self.db_file)
         db_writer.ignore_list(df_ignore=df_ignore)
 
     def __get_artist_graph(self) -> None:
@@ -343,10 +343,12 @@ class DBTransform(DBStorage):
     def __extract_artist_to_ignore(self) -> None:
         """Define which artists to exclude from discogs extraction
 
-           Pruning the graph to avoid pulling too much Discogs information, that is so far
-           in the tree from collected artists to be relevant.
+        Pruning the graph to avoid pulling too much Discogs information, that is so far
+        in the tree from collected artists to be relevant.
         """
-        lst_vertices = self.read_table(name_table="artist_vertex").to_dict(orient="records")
+        lst_vertices = self.read_table(name_table="artist_vertex").to_dict(
+            orient="records"
+        )
         lst_edges = self.read_table(name_table="artist_edge").to_dict(orient="records")
         graph = ig.Graph.DictList(
             vertices=lst_vertices,
@@ -371,7 +373,7 @@ class DBTransform(DBStorage):
         # Get vertices to ignore
         vtx_to_exclude = list(set(graph.vs.indices) - set(vtx_relevant))
         df_ignore = pd.DataFrame({"id_artist": graph.vs[vtx_to_exclude]["name"]})
-        self.store_replace(df=df_ignore, name_table='artist_ignore')
+        self.store_replace(df=df_ignore, name_table="artist_ignore")
 
     def __cluster_component(self, graph_component: ig.Graph) -> pd.DataFrame:
         idx_community_start = 0
@@ -440,7 +442,6 @@ class DBTransform(DBStorage):
             qty_graphs_queued = len(lst_processing_queue)
         return pd.concat(lst_communities, axis=0, ignore_index=True)
 
-
     def __create_clusters(self) -> None:
         graph_all = self.__get_artist_graph()
         # Cluster all components
@@ -488,7 +489,7 @@ class DBTransform(DBStorage):
             community_max = max(df_component["id_community"])
             lst_dendrogram[i] = df_component
         df_hierarchy = pd.concat(lst_dendrogram, axis=0, ignore_index=True)
-        db_writer = _db_writer.ArtistNetwork(db_file=self.db_file)
+        db_writer = ArtistNetwork(db_file=self.db_file)
         db_writer.community_hierarchy(df_hierarchy=df_hierarchy)
         # self.execute_sql_file(
         #     file_name="loading/sql/extract_community_dendrogram.sql"
@@ -585,10 +586,12 @@ class DBTransform(DBStorage):
         # db_reader = _db_reader.Collection(db_file=self.db_file)
         # db_writer = _db_writer.Collection(db_file=self.db_file)
         self.__extract_artist_to_ignore()
-        qty_artists_not_added = self.read_sql(sql="SELECT COUNT(*) FROM vw_artists_not_added;") #db_reader.qty_artists_not_added()
+        qty_artists_not_added = self.read_sql(
+            sql="SELECT COUNT(*) FROM vw_artists_not_added;"
+        )  # db_reader.qty_artists_not_added()
         while qty_artists_not_added > 0:
-            df_write_attempts = self.read_table(name_table='artist_write_attempts')
-            df_artists_new = self.read_table(name_table='vw_artists_not_added')
+            df_write_attempts = self.read_table(name_table="artist_write_attempts")
+            df_artists_new = self.read_table(name_table="vw_artists_not_added")
             artists = []
             for index, row in df_artists_new.iterrows():
                 artists.append(self.client_discogs.artist(id=row["id_artist"]))
@@ -612,7 +615,6 @@ class DBTransform(DBStorage):
             )
             db_writer.artist_write_attempts(df_write_attempts=df_write_attempts)
             qty_artists_not_added = db_reader.qty_artists_not_added()
-
 
     def start(self) -> None:
         self.__artist_is_groups()

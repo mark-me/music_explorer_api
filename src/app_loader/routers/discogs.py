@@ -3,7 +3,7 @@ import os
 from dotenv import dotenv_values
 from fastapi import APIRouter, HTTPException
 
-from app_loader.etl import Discogs
+from .etl import Discogs
 
 config = {
     **dotenv_values(".env"),  # load shared development variables
@@ -12,12 +12,12 @@ config = {
 
 discogs = Discogs(file_secrets="config/secrets.yml")
 
-router = APIRouter(
+discogs_router = APIRouter(
     prefix='/discogs',
     tags=['Discogs resources']
 )
 
-@router.get("/check-credentials/")
+@discogs_router.get("/check-credentials/")
 async def check_user_credentials():
     """ Check if user credentials for Discogs are present
     """
@@ -26,7 +26,7 @@ async def check_user_credentials():
     else:
         raise HTTPException(status_code=401, detail='Let user (re-)authorize access to her/his Discogs account')
 
-@router.get("/get-user-access/")
+@discogs_router.get("/get-user-access/")
 async def open_discogs_permissions_page():
     """ Asks user to give app access to Discogs account, with a callback url to handle validation
     """
@@ -34,13 +34,13 @@ async def open_discogs_permissions_page():
     result = discogs.request_user_access(callback_url=callback_url)
     return result
 
-@router.get("/receive-token/")
+@discogs_router.get("/receive-token/")
 async def accept_user_token(oauth_token: str, oauth_verifier: str):
     """Callback function to process the user authentication result
     """
     result = discogs.save_user_token(oauth_verifier)
     return result
 
-@router.get("/process_user_data/")
+@discogs_router.get("/process_user_data/")
 async def process_user_data():
     discogs.process_user_data()
