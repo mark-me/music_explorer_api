@@ -1,14 +1,13 @@
 import os
 from pathlib import Path
 
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
 import uvicorn
 from dotenv import dotenv_values
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 
-from routers import (
-    discogs,
-)
+from routers import discogs, querying
 
 config = {
     **dotenv_values(f"{Path(__file__).parent}/.env"),  # load shared development variables
@@ -17,7 +16,15 @@ config = {
 
 app = FastAPI()
 app.include_router(discogs.router)
+app.include_router(querying.router)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=['*'],
+    allow_credentials=True,
+    allow_methods=['*'],
+    allow_headers=['*'],
+)
 
 @app.get("/", response_class=HTMLResponse)
 async def welcome_page(request: Request):

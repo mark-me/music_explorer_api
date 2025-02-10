@@ -1,8 +1,7 @@
-from fastapi import APIRouter, HTTPException
-from dotenv import dotenv_values
-
-from pydantic import BaseModel
 import os
+
+from dotenv import dotenv_values
+from fastapi import APIRouter, HTTPException
 
 from etl.discogs import Discogs
 
@@ -17,9 +16,6 @@ router = APIRouter(
     prefix='/discogs',
     tags=['Discogs resources']
 )
-
-class Artist(BaseModel):
-    artist: str
 
 @router.get("/check-credentials/")
 async def check_user_credentials():
