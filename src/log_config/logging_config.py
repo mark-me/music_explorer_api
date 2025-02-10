@@ -3,7 +3,7 @@ import logging.config
 
 LOGGING = {
     "version": 1,
-    "disable_existing_loggers": False,
+    "disable_existing_loggers": True,
     "formatters": {
         "json": {
             "format": "%(asctime)s %(levelname)s %(message)s %(module)s %(funcName)s %(process)d",

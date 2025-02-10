@@ -1,7 +1,7 @@
 import os
 
 from dotenv import dotenv_values
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 
 from .etl import Discogs
 
@@ -42,5 +42,6 @@ async def accept_user_token(oauth_token: str, oauth_verifier: str):
     return result
 
 @discogs_router.get("/process_user_data/")
-async def process_user_data():
-    discogs.process_user_data()
+async def process_user_data(background_tasks: BackgroundTasks):
+    background_tasks.add_task(discogs.process_user_data)
+    return {"message": "Started processing user Discogs data"}

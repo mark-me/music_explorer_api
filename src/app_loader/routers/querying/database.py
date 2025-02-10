@@ -1,8 +1,11 @@
-import yaml
+import os
+import sqlite3
 import sqlalchemy as _sql
 import sqlalchemy.ext.declarative as _declarative
 import sqlalchemy.orm as _orm
-import sqlite3
+import yaml
+
+print(os.getcwd())
 
 with open(r'config.yml') as file:
     config = yaml.load(file, Loader=yaml.FullLoader)

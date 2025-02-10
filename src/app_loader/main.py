@@ -13,6 +13,8 @@ config = {
     **os.environ,  # override loaded values with environment variables
 }
 
+os.chdir(Path(__file__).parent)
+
 app = FastAPI()
 app.include_router(discogs.discogs_router)
 app.include_router(db_query.query_router)
