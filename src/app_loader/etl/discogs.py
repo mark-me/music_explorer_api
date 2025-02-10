@@ -1,18 +1,12 @@
-import logging
-
+import log_config import logging
 import discogs_client
 from discogs_client.exceptions import HTTPError
 
+from etl.db_transformer import DBTransform
 from etl.db_utils import ManageDB
 from etl.extract import Extractor
-from etl.db_transformer import DBTransform
 from utils import SecretsYAML
 
-logging.basicConfig(
-    format="%(levelname)s:\t%(asctime)s - %(module)s: %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-    level=logging.INFO,
-)
 logger = logging.getLogger(__name__)
 
 
