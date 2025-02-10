@@ -1,11 +1,11 @@
-import log_config import logging
+from log_config import logging
 import discogs_client
 from discogs_client.exceptions import HTTPError
 
-from etl.db_transformer import DBTransform
-from etl.db_utils import ManageDB
-from etl.extract import Extractor
-from utils import SecretsYAML
+from .db_transformer import DBTransform
+from .db_utils import ManageDB
+from .extract import Extractor
+from app_loader.utils import SecretsYAML
 
 logger = logging.getLogger(__name__)
 

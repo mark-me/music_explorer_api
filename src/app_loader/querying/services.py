@@ -1,8 +1,9 @@
-from fastapi import Query
 import sqlalchemy.orm as _orm
 from sqlalchemy import or_
 
-import database as _database, models as _models, schemas as _schemas
+import app_loader.querying.database as _database
+import app_loader.querying.models as _models
+import app_loader.querying.schemas as _schemas
 
 
 def create_database():

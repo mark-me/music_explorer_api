@@ -1,21 +1,7 @@
 {
-	"folders": [
-		{
-			"name": "Root",
-			"path": ".."
-		},
-		{
-			"name": "Data provider",
-			"path": "../src/app_loader"
-		},
-		{
-			"name": "Browser App",
-			"path": "../src/app_browser"
-		},
-		{
-			"name": "Spindler App",
-			"path": "../spindler"
-		}
-	],
-	"settings": {}
+    "folders": [
+        {
+            "path": "../src"
+        }
+    ]
 }

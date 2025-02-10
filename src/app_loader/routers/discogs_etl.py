@@ -3,7 +3,7 @@ import os
 from dotenv import dotenv_values
 from fastapi import APIRouter, HTTPException
 
-from etl.discogs import Discogs
+from app_loader.etl import Discogs
 
 config = {
     **dotenv_values(".env"),  # load shared development variables
