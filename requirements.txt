@@ -15,11 +15,13 @@ h11==0.14.0
 idna==3.10
 igraph==0.11.8
 kombu==5.4.2
--e git+https://github.com/mark-me/music_explorer_api.git@d42c8b9291d115b39d7ddaf18b4c354da18e63dc#egg=music_explorer_api
+-e git+https://github.com/mark-me/music_explorer_api.git@f604be9a2c2519b1cc95e3e7f7613468a553d393#egg=music_explorer_api
 numpy==2.2.2
 oauthlib==3.2.2
 pandas==2.2.3
+polars==1.22.0
 prompt_toolkit==3.0.50
+pyarrow==19.0.0
 pydantic==2.10.6
 pydantic_core==2.29.0
 python-dateutil==2.9.0.post0

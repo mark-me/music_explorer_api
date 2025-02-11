@@ -3,7 +3,7 @@ import shutil
 import sqlite3
 import time
 
-import pandas as pd
+import polars as pl
 
 class ManageDB:
     def __init__(self, db_file: str) -> None:
@@ -68,7 +68,7 @@ class DBStorage():
         sql_as_string = sql_file.read()
         cursor.executescript(sql_as_string)
 
-    def write_data(self, df: pd.DataFrame, name_table: str) -> None:
+    def write_data(self, df: pl.DataFrame, name_table: str) -> None:
         """Write data to the database"""
         if not df.empty:
             self.create_table(name_table=name_table)
@@ -118,26 +118,28 @@ class DBStorage():
             db_con.commit()
             db_con.close()
 
-    def store_replace(self, df: pd.DataFrame, name_table: str) -> None:
+    def store_replace(self, df: pl.DataFrame, name_table: str) -> None:
         """Storing data to a table"""
         db_con = sqlite3.connect(self.db_file)
         df.to_sql(name=name_table, con=db_con, if_exists='replace', index=False)
         db_con.close()
 
-    def store_append(self, df: pd.DataFrame, name_table: str) -> None:
+    def store_append(self, df: pl.DataFrame, name_table: str) -> None:
         db_con = sqlite3.connect(self.db_file)
         df.to_sql(name=name_table, con=db_con, if_exists='append', index=False)
         db_con.close()
 
-    def read_table(self, name_table: str) -> pd.DataFrame:
+    def read_table(self, name_table: str) -> list:
         db_con = sqlite3.connect(self.db_file)
         sql = "SELECT * FROM " + name_table
-        df = pd.read_sql_query(sql, con=db_con)
+        df = pl.read_database(sql, connection=db_con)
+        lst_rows = df.to_dicts()
         db_con.close()
-        return df
+        return lst_rows
 
-    def read_sql(self, sql: str) -> pd.DataFrame:
+    def read_sql(self, sql: str) -> list:
         db_con = sqlite3.connect(self.db_file)
-        df = pd.read_sql_query(sql, con=db_con)
+        df = pl.read_database(sql, connection=db_con)
+        lst_rows = df.to_dicts()
         db_con.close()
-        return df
+        return lst_rows

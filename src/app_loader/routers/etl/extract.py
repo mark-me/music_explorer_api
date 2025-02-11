@@ -5,7 +5,7 @@ import igraph as ig
 from tqdm import tqdm
 from discogs_client import Client
 
-from .db_utils import DBStorage
+from app_loader.db_operations import DBStorage
 from . import derive as _derive
 from . import db_writer as _db_writer
 from . import db_reader as _db_reader

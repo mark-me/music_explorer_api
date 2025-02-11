@@ -1,7 +1,7 @@
 import igraph as ig
 import pandas as pd
 
-from .db_utils import DBStorage
+from app_loader.db_operations import DBStorage
 from .db_writer import Artists, ArtistNetwork
 
 

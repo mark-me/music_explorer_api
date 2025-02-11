@@ -151,6 +151,12 @@ pip3 freeze > requirements.txt
 
 ## Creating docker image
 
+### Login
+
+```bash
+docker login ghcr.io -u mark-me -p <password>
+```
+
 ### Create
 
 ```bash

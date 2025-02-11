@@ -3,7 +3,7 @@ import discogs_client
 from discogs_client.exceptions import HTTPError
 
 from .db_transformer import DBTransform
-from .db_utils import ManageDB
+from app_loader.db_operations import ManageDB
 from .extract import Extractor
 from app_loader.utils import SecretsYAML
 

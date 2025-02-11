@@ -1,69 +1,54 @@
 from typing import Union
 
-import sqlalchemy.orm as _orm
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 
-from .querying import services as _services
+from app_loader.db_operations import CollectionReader
 
-query_router = APIRouter(
-    prefix='/query',
-    tags=['DB resources']
-)
+query_router = APIRouter(prefix="/db_query", tags=["DB Querying"])
 
-_services.create_database()
+collection = CollectionReader(db_file="/data/music_collection.db")
+
 
 @query_router.post("/collection_artists/")
-def read_collection_artists(
-    db: _orm.Session=Depends(_services.get_db),
-    ):
-    collection_artists = _services.get_collection_artists(db=db)
+def read_collection_artists():
+    collection_artists = collection.artists()
     return collection_artists
 
+
 @query_router.post("/collection_artist_releases/{id_artist}")
-def read_collection_artist_releases(
-    id_artist: str,
-    db: _orm.Session=Depends(_services.get_db),
-    ):
-    db_collection_artist  = _services.get_collection_artist(db=db, id_artist=id_artist)
-    if db_collection_artist is None:
+def read_collection_artist_releases(id_artist: str):
+    lst_artist = collection.artists(id_artist=id_artist)
+    if lst_artist is None:
         raise HTTPException(
-            status_code=404, detail="Sorry, this artist doesn't exist in your collection"
+            status_code=404,
+            detail="Sorry, this artist doesn't exist in your collection",
         )
-    collection_releases = _services.get_collection_artist_releases(db=db, id_artist=id_artist)
-    return collection_releases
+    lst_releases = collection.releases(id_artist=id_artist)
+    return lst_releases
+
 
 @query_router.post("/release_videos/{id_release}")
-def read_release_videos(
-    id_release: int,
-    db: _orm.Session=Depends(_services.get_db),
-    ):
-    release_videos = _services.get_release_videos(db=db, id_release=id_release)
-    return release_videos
+def read_release_videos(id_release: int):
+    lst_release_videos = collection.release_videos(id_release=id_release)
+    return lst_release_videos
+
 
 @query_router.post("/dendro_vertices/{id_hierarchy}")
-def read_dendrogram_vertices(
-    id_hierarchy: int,
-    db: _orm.Session=Depends(_services.get_db),
-    ):
-    dendrogram_vertices = _services.get_dendrogram_vertices(db=db, id_hierarchy=id_hierarchy)
-    return dendrogram_vertices
+def read_dendrogram_vertices(id_hierarchy: int):
+    lst_dendrogram_vertices = collection.dendrogram_vertices(id_hierarchy=id_hierarchy)
+    return lst_dendrogram_vertices
+
 
 @query_router.post("/dendro_edges/{id_hierarchy}")
-def read_dendrogram_edges(
-    id_hierarchy: int,
-    db: _orm.Session=Depends(_services.get_db),
-    ):
-    dendrogram_edges = _services.get_dendrogram_edges(db=db, id_hierarchy=id_hierarchy)
-    return dendrogram_edges
+def read_dendrogram_edges(id_hierarchy: int):
+    lst_dendrogram_edges = collection.dendrogram_edges(id_hierarchy=id_hierarchy)
+    return lst_dendrogram_edges
+
 
 @query_router.post("/spinder/")
-def read_spinder(
-    id_artist: Union[int, None] = None,
-    db: _orm.Session=Depends(_services.get_db),
-    ):
-    print(id_artist)
+def read_spinder(id_artist: Union[int, None] = None):
     if id_artist is None:
-        spinder_suggestion = _services.get_spinder_random(db=db)
+        lst_spinder_suggestion = collection.spindler_random()
     else:
-        spinder_suggestion = _services.get_spinder_artist(db=db, id_artist=id_artist)
-    return spinder_suggestion
+        lst_spinder_suggestion = collection.spindler_artist(id_artist=id_artist)
+    return lst_spinder_suggestion

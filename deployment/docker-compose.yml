@@ -1,5 +1,3 @@
----
-version: "2"
 services:
   collection_loader:
     container_name: collection-loader
@@ -9,8 +7,6 @@ services:
     ports:
       - 5001:5001
     restart: unless-stopped
-    depends_on:
-      - redis
   redis:
     container_name: redis
     image: redis:7.4.1-alpine3.20
