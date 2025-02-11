@@ -51,3 +51,35 @@ class CollectionReader(DBStorage):
         lst_rows = self.read_sql(sql=sql)
         return lst_rows
 
+    def create_view_artists_not_added(self) -> None:
+        name_view = 'vw_artists_not_added'
+        self.drop_view(name_view=name_view)
+        sql_definition = "SELECT DISTINCT id_artist\
+            FROM (\
+                SELECT id_artist FROM artist_masters\
+                WHERE role IN ('Main', 'Appearance', 'TrackAppearance')\
+                UNION\
+                    SELECT id_alias FROM artist_aliases\
+                    UNION\
+                        SELECT id_member FROM artist_members\
+                        UNION\
+                            SELECT id_group FROM artist_groups\
+                                UNION\
+                                    SELECT id_artist FROM release_artists )\
+            WHERE id_artist NOT IN ( SELECT id_artist FROM artist ) AND\
+					id_artist NOT IN ( SELECT id_artist FROM artist_ignore) AND\
+                    id_artist NOT IN ( SELECT id_artist FROM artist_write_attempts WHERE qty_attempts > 1)"
+        self.create_view(name_view=name_view, sql_definition=sql_definition)
+
+
+    def artists_not_added(self) -> list:
+        return self.read_table(name_table='vw_artists_not_added')
+
+    def qty_artists_not_added(self) -> int:
+        sql = "SELECT COUNT(*) FROM vw_artists_not_added;"
+        row = self.read_sql(sql=sql)
+        row
+        return row
+
+    def artists_write_attempts(self) -> list:
+        return self.read_table(name_table='artist_write_attempts')

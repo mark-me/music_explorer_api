@@ -14,7 +14,7 @@ Components of this repository:
 * An example of a docker-compose file
 * A conf file for the [swag](https://github.com/linuxserver/docker-swag) reverse proxy
 
-### Current
+## Current
 
 ```mermaid
 flowchart LR
@@ -114,9 +114,9 @@ INNER JOIN release_track_artists
 ORDER BY multi_tracks.title;
 ```
 
-# Snippets
+## Snippets
 
-## Creating a virtual environment
+### Creating a virtual environment
 
 First install the virtual environment package:
 
@@ -143,83 +143,87 @@ install package
 pip3 install
 ```
 
-### Create requirements.txt
+#### Create requirements.txt
 
 ```bash
 pip3 freeze > requirements.txt
 ```
 
-## Creating docker image
+### Creating docker image
 
-### Login
+#### Login
 
 ```bash
 docker login ghcr.io -u mark-me -p <password>
 ```
 
-### Create
+#### Create
 
 ```bash
 docker build -t ghcr.io/mark-me/musicexplorer:v0.0.1 .
 ```
 
-### Push image to github
+#### Push image to github
 
 ```bash
 docker push ghcr.io/mark-me/musicexplorer:v0.0.1
 ```
 
-# Project board
+## Project board
 
 [Kanban](https://github.com/users/mark-me/projects/1)
 
 ---
 
-# Music Collection Toolkit for Discogs Users
+## Music Collection Toolkit for Discogs Users
 
 Welcome to the **Music Collection Toolkit**, a suite of Python applications designed for music collectors who manage their collections on [Discogs.com](https://www.discogs.com/). This repository provides tools to help you explore, analyze, and interact with your collection data in new ways.
 
-## Features
+### Features
 
-- **Data Loading**: Easily load and import your Discogs collection data into your preferred exploration environment.
-- **API Service**: A powerful API to query and retrieve insights about your music collection. Get details like genres, formats, value estimates, and much more.
-- **Graphical User Interface (GUI)**: An intuitive interface to browse and visualize your music collection, enabling you to filter by artist, genre, or format.
+* **Data Loading**: Easily load and import your Discogs collection data into your preferred exploration environment.
+* **API Service**: A powerful API to query and retrieve insights about your music collection. Get details like genres, formats, value estimates, and much more.
+* **Graphical User Interface (GUI)**: An intuitive interface to browse and visualize your music collection, enabling you to filter by artist, genre, or format.
 
-## Requirements
+### Requirements
 
-- Docker
-- Docker Compose
+* Docker
+* Docker Compose
 
-## Installation
+### Installation
 
 1. Clone this repository:
+
    ```bash
    git clone https://github.com/yourusername/music-collection-toolkit.git
    cd music-collection-toolkit
    ```
 
 2. Set up your Discogs API key by following their [API documentation](https://www.discogs.com/developers/), and add your credentials to the `.env` file in the root of the project:
-   ```
+
+   ```bash
    DISCOGS_API_KEY=your_api_key
    ```
 
 3. Build and start the services using Docker Compose:
+
    ```bash
    docker-compose up --build
    ```
 
    This will start all services, including the data loader, API service, and GUI.
 
-## Usage
+### Usage
 
-### Data Loading
+#### Data Loading
+
 Once the services are up, you can load your Discogs data into the environment using:
 
 ```bash
 curl -X POST http://localhost:5000/load_data
 ```
 
-### API Service
+#### API Service
 
 The API service will be available at `http://localhost:5000`. You can query your collection via the API, for example:
 

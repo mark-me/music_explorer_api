@@ -5,7 +5,7 @@ import pandas as pd
 from tqdm import tqdm
 from discogs_client.models import Artist, CollectionItemInstance
 
-from . import db_writer as _db_writer
+from ...db_operations import write as _db_writer
 
 
 class Artists:
@@ -17,7 +17,7 @@ class Artists:
         self.process_masters = True
 
     def process(self) -> None:
-        db_writer = _db_writer.Artists(db_file=self.db_file)
+        db_writer = _db_writer.ArtistsWriter(db_file=self.db_file)
         for artist in tqdm(
             self.__d_artists, total=len(self.__d_artists), desc="Artists"
         ):
@@ -41,7 +41,7 @@ class Artists:
                 db_writer.urls(df_urls=df_urls)
 
     def process_masters(self) -> None:
-        db_writer = _db_writer.Artists(db_file=self.db_file)
+        db_writer = _db_writer.ArtistsWriter(db_file=self.db_file)
         for artist in tqdm(
             self.__d_artists, total=len(self.__d_artists), desc="Artists"
         ):
@@ -227,7 +227,7 @@ class MasterRelease:
         self.db_file = db_file
 
     def process(self) -> None:
-        db_writer = _db_writer.Master(db_file=self.db_file)
+        db_writer = _db_writer.MasterWriter(db_file=self.db_file)
         df_stats = self.stats()
         exists = self.db_writer.in_db(id_master=self.dict_release.id)
         if not exists:
@@ -339,7 +339,7 @@ class Release(MasterRelease):
         self.__artists = Artists(artists=release.artists, db_file=db_file)
 
     def process(self) -> None:
-        db_writer = _db_writer.Release(db_file=self.db_file)
+        db_writer = _db_writer.ReleaseWriter(db_file=self.db_file)
         # df_stats = self.stats()
         exists = db_writer.in_db(id_release=self.dict_release.id)
         if not exists:
@@ -478,7 +478,7 @@ class Release(MasterRelease):
 
 class Collection:
     def __init__(self, db_file: str) -> None:
-        self.db_writer = _db_writer.Collection(db_file=db_file)
+        self.db_writer = _db_writer.CollectionWriter(db_file=db_file)
 
 
 class CollectionItem:
@@ -488,7 +488,7 @@ class CollectionItem:
         self.db_file = db_file
 
     def process(self) -> None:
-        db_writer = _db_writer.Collection(db_file=self.db_file)
+        db_writer = _db_writer.CollectionWriter(db_file=self.db_file)
         df_item = self.__collection_item()
         self.__release.process()
         db_writer.items(df_items=df_item)

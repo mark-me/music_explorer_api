@@ -1,8 +1,8 @@
 import igraph as ig
-import pandas as pd
+import polars as pl
 
 from app_loader.db_operations import DBStorage
-from .db_writer import Artists, ArtistNetwork
+from ...db_operations.write import ArtistsWriter, ArtistNetworkWriter
 
 
 class DBTransform(DBStorage):
@@ -10,7 +10,7 @@ class DBTransform(DBStorage):
         super().__init__(db_file)
         pass
 
-    def __artist_is_groups(self) -> None:
+    def _artist_is_groups(self) -> None:
         self.column_add(name_table="artist", name_column="is_group", type_data="INT")
         sql_statement = "CREATE INDEX IF NOT EXISTS idx_artist_members_id_artist ON artist_members (id_artist);"
         self.execute_sql(sql=sql_statement)
@@ -26,7 +26,7 @@ class DBTransform(DBStorage):
         """
         self.execute_sql(sql=sql_statement)
 
-    def __artist_thumbnails(self) -> None:
+    def _artist_thumbnails(self) -> None:
         self.column_add(
             name_table="artist", name_column="url_thumbnail", type_data="VARCHAR"
         )
@@ -46,7 +46,7 @@ class DBTransform(DBStorage):
         """
         self.execute_sql(sql=sql_statement)
 
-    def __artist_qty_collection_items(self) -> None:
+    def _artist_qty_collection_items(self) -> None:
         self.column_add(
             name_table="artist", name_column="qty_collection_items", type_data="INT"
         )
@@ -71,7 +71,7 @@ class DBTransform(DBStorage):
         self.execute_sql(sql=sql_statement)
         self.drop_existing_table(name_table="qty_collection_items")
 
-    def __load_release_roles(self) -> None:
+    def _load_release_roles(self) -> None:
         has_table = self.table_exists(name_table="role")
         if not has_table:
             sql_statement = """
@@ -175,7 +175,7 @@ class DBTransform(DBStorage):
         )
         self.execute_sql(sql=sql_statement)
 
-    def __artist_relationships(self) -> None:
+    def _artist_relationships(self) -> None:
         self.drop_existing_table(name_table="artist_relations")
         sql_statement = """
         CREATE TABLE artist_relations AS
@@ -231,7 +231,7 @@ class DBTransform(DBStorage):
         """
         self.execute_sql(sql=sql_statement)
 
-    def __artist_vertices(self) -> None:
+    def _artist_vertices(self) -> None:
         """Retrieve artists in order to determine where to stop discogs extraction"""
         self.drop_existing_table(name_table="artist_vertex")
         sql_statement = """
@@ -257,7 +257,7 @@ class DBTransform(DBStorage):
                 GROUP BY id_artist"""
         self.execute_sql(sql=sql_statement)
 
-    def __artist_edges(self) -> None:
+    def _artist_edges(self) -> None:
         """Retrieve artist cooperations in order to determine where to stop discogs extraction"""
         self.drop_existing_table(name_table="artist_edge")
         sql_statement = """
@@ -283,7 +283,7 @@ class DBTransform(DBStorage):
                 GROUP BY id_artist_from, id_artist_to, relation_type;"""
         self.execute_sql(sql=sql_statement)
 
-    def __extract_artist_to_ignore(self) -> None:
+    def _extract_artist_to_ignore(self) -> None:
         """Define which artists to exclude from discogs extraction"""
         df_vertices = self.read_table(name_table="artist_vertex")
         df_edges = self.read_table(name_table="artist_edge")
@@ -308,11 +308,11 @@ class DBTransform(DBStorage):
             vtx_relevant = list(set(vtx_connectors + vtx_relevant))
         # Get vertices to ignore
         vtx_to_exclude = list(set(graph.vs.indices) - set(vtx_relevant))
-        df_ignore = pd.DataFrame({"id_artist": graph.vs[vtx_to_exclude]["name"]})
-        db_writer = Artists(db_file=self.db_file)
+        df_ignore = pl.DataFrame({"id_artist": graph.vs[vtx_to_exclude]["name"]})
+        db_writer = ArtistsWriter(db_file=self.db_file)
         db_writer.ignore_list(df_ignore=df_ignore)
 
-    def __get_artist_graph(self) -> None:
+    def _get_artist_graph(self) -> None:
         lst_edges = self.read_sql(
             sql="SELECT * FROM artist_relations WHERE id_artist_from != id_artist_to"
         ).to_dict(orient="records")
@@ -340,7 +340,7 @@ class DBTransform(DBStorage):
         graph.delete_vertices(vtx_to_exclude)
         return graph
 
-    def __extract_artist_to_ignore(self) -> None:
+    def _extract_artist_to_ignore(self) -> None:
         """Define which artists to exclude from discogs extraction
 
         Pruning the graph to avoid pulling too much Discogs information, that is so far
@@ -372,10 +372,10 @@ class DBTransform(DBStorage):
             vtx_relevant = list(set(vtx_connectors + vtx_relevant))
         # Get vertices to ignore
         vtx_to_exclude = list(set(graph.vs.indices) - set(vtx_relevant))
-        df_ignore = pd.DataFrame({"id_artist": graph.vs[vtx_to_exclude]["name"]})
+        df_ignore = pl.DataFrame({"id_artist": graph.vs[vtx_to_exclude]["name"]})
         self.store_replace(df=df_ignore, name_table="artist_ignore")
 
-    def __cluster_component(self, graph_component: ig.Graph) -> pd.DataFrame:
+    def _cluster_component(self, graph_component: ig.Graph) -> pl.DataFrame:
         idx_community_start = 0
         graph_component.vs["id_community_from"] = idx_community_start
         # Queue for processing graphs, keeping track level in community tree and relationships between branches
@@ -426,7 +426,7 @@ class DBTransform(DBStorage):
                 ]
                 idx_community_start = max(community_membership)
                 lst_communities.append(
-                    pd.DataFrame(
+                    pl.DataFrame(
                         {
                             "id_artist": graph.vs["id_artist"],
                             "name_artist": graph.vs["name_artist"],
@@ -440,17 +440,18 @@ class DBTransform(DBStorage):
                     )
                 )
             qty_graphs_queued = len(lst_processing_queue)
-        return pd.concat(lst_communities, axis=0, ignore_index=True)
+            df_communities = pl.concat(lst_communities, axis=0, ignore_index=True)
+        return df_communities
 
-    def __create_clusters(self) -> None:
-        graph_all = self.__get_artist_graph()
+    def _create_clusters(self) -> None:
+        graph_all = self._get_artist_graph()
         # Cluster all components
         lst_components = graph_all.decompose()  # Decompose graph
         lst_dendrogram = []
         for component in lst_components:
             if sum(component.vs["in_collection"]) <= 2:
                 qty_vertices = len(component.vs)
-                df_dendrogram = pd.DataFrame(
+                df_dendrogram = pl.DataFrame(
                     {
                         "id_artist": component.vs["id_artist"],
                         "name_artist": component.vs["name_artist"],
@@ -463,7 +464,7 @@ class DBTransform(DBStorage):
                     }
                 )
             else:
-                df_dendrogram = self.__cluster_component(component)
+                df_dendrogram = self._cluster_component(component)
             lst_dendrogram.append(df_dendrogram)
         # Making all community id's unique across the dendrograms and add root to connect to components
         community_max = 0
@@ -483,19 +484,19 @@ class DBTransform(DBStorage):
                 df_component.loc[:, "id_hierarchy"] = (
                     df_component.loc[:, "id_hierarchy"] + 1
                 )
-                df_component = pd.concat(
+                df_component = pl.concat(
                     [df_component, df_root], axis=0, ignore_index=True
                 )
             community_max = max(df_component["id_community"])
             lst_dendrogram[i] = df_component
-        df_hierarchy = pd.concat(lst_dendrogram, axis=0, ignore_index=True)
-        db_writer = ArtistNetwork(db_file=self.db_file)
+        df_hierarchy = pl.concat(lst_dendrogram, axis=0, ignore_index=True)
+        db_writer = ArtistNetworkWriter(db_file=self.db_file)
         db_writer.community_hierarchy(df_hierarchy=df_hierarchy)
         # self.execute_sql_file(
         #     file_name="loading/sql/extract_community_dendrogram.sql"
         # )  # Create a summary of the clustering hierarchy
 
-    def __community_labels(self) -> None:
+    def _community_labels(self) -> None:
         self.drop_existing_table(name_table="artist_collection_ranked_eigenvalue")
         sql_statement = """
             CREATE TABLE artist_collection_ranked_eigenvalue AS
@@ -536,8 +537,8 @@ class DBTransform(DBStorage):
         """
         self.execute_sql(sql=sql_statement)
 
-    def __community_dendrogram(self) -> None:
-        self.__community_labels()
+    def _community_dendrogram(self) -> None:
+        self._community_labels()
         self.drop_existing_table(name_table="community_dendrogram_vertices")
         sql_statement = """
             CREATE TABLE community_dendrogram_vertices AS
@@ -585,7 +586,7 @@ class DBTransform(DBStorage):
         """Process artist information derived from groups and memberships"""
         # db_reader = _db_reader.Collection(db_file=self.db_file)
         # db_writer = _db_writer.Collection(db_file=self.db_file)
-        self.__extract_artist_to_ignore()
+        self._extract_artist_to_ignore()
         qty_artists_not_added = self.read_sql(
             sql="SELECT COUNT(*) FROM vw_artists_not_added;"
         )  # db_reader.qty_artists_not_added()
@@ -595,10 +596,10 @@ class DBTransform(DBStorage):
             artists = []
             for index, row in df_artists_new.iterrows():
                 artists.append(self.client_discogs.artist(id=row["id_artist"]))
-                df_write_attempts = pd.concat(
+                df_write_attempts = pl.concat(
                     [
                         df_write_attempts,
-                        pd.DataFrame.from_records(
+                        pl.DataFrame.from_records(
                             [{"id_artist": row["id_artist"], "qty_attempts": 1}]
                         ),
                     ]
@@ -607,7 +608,7 @@ class DBTransform(DBStorage):
             derive = _derive.Artists(artists=artists, db_file=self.db_file)
             derive.process_masters = False
             derive.process()
-            self.__extract_artist_to_ignore()
+            self._extract_artist_to_ignore()
             df_write_attempts = (
                 df_write_attempts.groupby(["id_artist"])["qty_attempts"]
                 .sum()
@@ -617,12 +618,12 @@ class DBTransform(DBStorage):
             qty_artists_not_added = db_reader.qty_artists_not_added()
 
     def start(self) -> None:
-        self.__artist_is_groups()
-        self.__artist_thumbnails()
-        self.__artist_qty_collection_items()
-        self.__load_release_roles()
-        self.__artist_relationships()
-        self.__artist_vertices()
-        self.__artist_edges()
-        self.__create_clusters()
-        self.__community_dendrogram()
+        self._artist_is_groups()
+        self._artist_thumbnails()
+        self._artist_qty_collection_items()
+        self._load_release_roles()
+        self._artist_relationships()
+        self._artist_vertices()
+        self._artist_edges()
+        self._create_clusters()
+        self._community_dendrogram()

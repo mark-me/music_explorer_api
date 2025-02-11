@@ -1,11 +1,12 @@
-from log_config import logging
 import discogs_client
 from discogs_client.exceptions import HTTPError
 
-from .db_transformer import DBTransform
 from app_loader.db_operations import ManageDB
-from .extract import Extractor
+from app_loader.log_config import logging
 from app_loader.utils import SecretsYAML
+
+from .db_transformer import DBTransform
+from .extract import Extractor
 
 logger = logging.getLogger(__name__)
 

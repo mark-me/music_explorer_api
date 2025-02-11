@@ -32,11 +32,6 @@ class Collection(DBStorage):
 
     def artists_not_added(self) -> pd.DataFrame:
         return self.read_table(name_table='vw_artists_not_added')
-        # TODO: Remove
-        # db_con = sqlite3.connect(self.db_file)
-        # df_artists = pd.read_sql(sql="SELECT * FROM vw_artists_not_added;", con=db_con)
-        # db_con.close()
-        # return df_artists
 
     def qty_artists_not_added(self) -> int:
         db_con = sqlite3.connect(self.db_file)

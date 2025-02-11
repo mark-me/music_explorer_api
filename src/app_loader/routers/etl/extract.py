@@ -1,13 +1,13 @@
 import datetime as dt
 
-import pandas as pd
+import polars as pl
 import igraph as ig
 from tqdm import tqdm
 from discogs_client import Client
 
 from app_loader.db_operations import DBStorage
 from . import derive as _derive
-from . import db_writer as _db_writer
+from ...db_operations import write as _db_writer
 from . import db_reader as _db_reader
 
 
@@ -31,7 +31,7 @@ class Extractor(DBStorage):
 
     def collection_value(self) -> None:
         """ Collection value"""
-        db_writer = _db_writer.Collection(db_file=self.db_file)
+        db_writer = _db_writer.CollectionWriter(db_file=self.db_file)
         collection_value = self.user.collection_value
         dict_stats = {
             "time_value_retrieved": dt.datetime.now(),
@@ -40,12 +40,12 @@ class Extractor(DBStorage):
             "amt_median": collection_value.median,
             "amt_minumum": collection_value.minimum
         }
-        db_writer.value(pd.DataFrame([dict_stats]))
+        db_writer.value(pl.DataFrame([dict_stats]))
 
 
     def collection_items(self) -> None:
         """Process the user's collection items"""
-        db_writer = _db_writer.Collection(db_file=self.db_file)
+        db_writer = _db_writer.CollectionWriter(db_file=self.db_file)
         db_writer.drop_tables()
         qty_items = self.user.collection_folders[0].count
         for item in tqdm(
@@ -79,14 +79,14 @@ class Extractor(DBStorage):
             vtx_relevant = list(set(vtx_connectors + vtx_relevant))
         # Get vertices to ignore
         vtx_to_exclude = list(set(graph.vs.indices) - set(vtx_relevant))
-        df_ignore = pd.DataFrame({"id_artist": graph.vs[vtx_to_exclude]["name"]})
-        db_writer = _db_writer.Artists(db_file=self.db_file)
+        df_ignore = pl.DataFrame({"id_artist": graph.vs[vtx_to_exclude]["name"]})
+        db_writer = _db_writer.ArtistsWriter(db_file=self.db_file)
         db_writer.ignore_list(df_ignore=df_ignore)
 
     def artists_from_collection(self) -> None:
         """Process artist information derived from groups and memberships"""
         db_reader = _db_reader.Collection(db_file=self.db_file)
-        db_writer = _db_writer.Collection(db_file=self.db_file)
+        db_writer = _db_writer.CollectionWriter(db_file=self.db_file)
         self.__extract_artist_to_ignore()
         qty_artists_not_added = db_reader.qty_artists_not_added()
         while qty_artists_not_added > 0:
@@ -95,10 +95,10 @@ class Extractor(DBStorage):
             artists = []
             for index, row in df_artists_new.iterrows():
                 artists.append(self.client_discogs.artist(id=row["id_artist"]))
-                df_write_attempts = pd.concat(
+                df_write_attempts = pl.concat(
                     [
                         df_write_attempts,
-                        pd.DataFrame.from_records(
+                        pl.DataFrame.from_records(
                             [{"id_artist": row["id_artist"], "qty_attempts": 1}]
                         ),
                     ]
