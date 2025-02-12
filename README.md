@@ -14,7 +14,9 @@ Components of this repository:
 * An example of a docker-compose file
 * A conf file for the [swag](https://github.com/linuxserver/docker-swag) reverse proxy
 
-## Current
+## Architecture
+
+### Current architecture
 
 ```mermaid
 flowchart LR
@@ -36,7 +38,7 @@ flowchart LR
     etl_api --requests--> authentication_discogs
 ```
 
-### Future
+### Future architecture
 
 ```mermaid
 flowchart LR
@@ -61,6 +63,75 @@ flowchart LR
     celery_loader --consumes--> data_discogs
     celery_loader --consumes--> data_lastfm
     celery_loader --stores--> data_db
+```
+
+## Class design
+
+### Current class design
+
+```mermaid
+classDiagram
+    DBStorage <|-- CollectionReader
+    DBStorage <|-- CollectionWriter
+    DBStorage <|-- ArtistsWriter
+    DBStorage <|-- ArtistsReader
+    DBStorage <|-- MasterWriter
+    DBStorage <|-- ReleaseWriter
+    DBStorage <|-- ArtistNetworkWriter
+    DBStorage <|-- DBTransform
+    MasterReleaseDerive <|-- ReleaseDerive
+    Discogs *-- ManageDB
+    Discogs *-- Extractor
+    Discogs *-- DBTransform
+    Extractor *-- Collection
+    Extractor *-- ArtistsDerive
+    Extractor *-- ArtistsWriter
+    Extractor *-- ArtistsReader
+    Extractor *-- MasterWriter
+    Extractor *-- ReleaseWriter
+    Extractor *-- CollectionWriter
+    Extractor *-- CollectionItemDerive
+    DBTransform *-- ArtistsWriter
+    DBTransform *-- ArtistNetworkWriter
+    ReleaseDerive *-- ReleaseWriter
+    ReleaseDerive *-- ArtistsDerive
+    CollectionDerive *-- CollectionWriter
+    CollectionItemDerive *-- ReleaseDerive
+    CollectionItemDerive *-- CollectionWriter
+    ArtistsDerive *-- ArtistsWriter
+    MasterReleaseDerive *-- MasterWriter
+```
+
+### Future class design
+
+```mermaid
+classDiagram
+    class ManageDB
+    Discogs *-- DiscogsCollection
+    Discogs *-- DBTransform
+    DBStorage <|-- Collection
+    DBStorage <|-- Artists
+    DBStorage <|-- Master
+    DBStorage <|-- Release
+    DBStorage <|-- ArtistNetwork
+    DBStorage <|-- DBTransform
+    MasterReleaseDerive <|-- ReleaseDerive
+    DiscogsExtractor *-- Collection
+    DiscogsExtractor *-- ArtistsDerive
+    DiscogsExtractor *-- Artists
+    DiscogsExtractor *-- Master
+    DiscogsExtractor *-- Release
+    DiscogsExtractor *-- Collection
+    DiscogsExtractor *-- CollectionItemDerive
+    DBTransform *-- Artists
+    DBTransform *-- ArtistNetwork
+    ReleaseDerive *-- Release
+    ReleaseDerive *-- ArtistsDerive
+    CollectionDerive *-- Collection
+    CollectionItemDerive *-- ReleaseDerive
+    CollectionItemDerive *-- Collection
+    ArtistsDerive *-- Artists
+    MasterReleaseDerive *-- Master
 ```
 
 ## A word from the author

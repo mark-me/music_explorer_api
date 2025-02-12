@@ -6,13 +6,14 @@ from app_loader.log_config import logging
 from app_loader.utils import SecretsYAML
 
 from .db_transformer import DBTransform
-from .extract import Extractor
+from .extract import DiscogsCollection
 
 logger = logging.getLogger(__name__)
 
 
 class Discogs:
-    def __init__(self, file_secrets) -> None:
+    def __init__(self, file_secrets: str, file_db: str) -> None:
+        self._file_db = file_db
         self._consumer_key = "zvHFpFQWJrdDfCwoLalG"
         self._consumer_secret = "FzRxDEGBbvWZpAmkQKBYHYeNdIjKxnVO"
         self._secrets = {"name": None, "secret": None, "token": None, "user": None}
@@ -90,12 +91,18 @@ class Discogs:
         db_file = db_manager.create_load_copy()
 
         # Extract data from Discogs
-        discogs_extractor = Extractor(
-            client_discogs=self.client_discogs,
-            db_file=db_file,
+        collection_extractor = DiscogsCollection(
+            discogs_client==self.client_discogs,
+            file_db=db_file,
         )
+        """Starts user's collection processing"""
         discogs_extractor.collection_value()
         discogs_extractor.collection_items()
+        # self.artist_set_attributes()
+        # self.artists_from_collection()
+        # self.extract_artist_edges()
+        # self.create_clusters()
+        # self.similar_dissimilar()
 
         # Apply transformations on data
         db_transformer = DBTransform(db_file=db_file)

@@ -1,4 +1,4 @@
-from .read import CollectionReader
+from .read import ArtistsReader, CollectionReader
 from .utils import DBStorage, ManageDB
 from .write import (
     ArtistNetworkWriter,

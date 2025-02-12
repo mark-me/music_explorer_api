@@ -1,8 +1,7 @@
 import igraph as ig
 import polars as pl
 
-from app_loader.db_operations import DBStorage
-from ...db_operations.write import ArtistsWriter, ArtistNetworkWriter
+from app_loader.db_operations import ArtistNetworkWriter, ArtistsWriter, DBStorage
 
 
 class DBTransform(DBStorage):
@@ -309,7 +308,7 @@ class DBTransform(DBStorage):
         # Get vertices to ignore
         vtx_to_exclude = list(set(graph.vs.indices) - set(vtx_relevant))
         df_ignore = pl.DataFrame({"id_artist": graph.vs[vtx_to_exclude]["name"]})
-        db_writer = ArtistsWriter(db_file=self.db_file)
+        db_writer = ArtistsWriter(file_db=self.file_db)
         db_writer.ignore_list(df_ignore=df_ignore)
 
     def _get_artist_graph(self) -> None:
@@ -490,7 +489,7 @@ class DBTransform(DBStorage):
             community_max = max(df_component["id_community"])
             lst_dendrogram[i] = df_component
         df_hierarchy = pl.concat(lst_dendrogram, axis=0, ignore_index=True)
-        db_writer = ArtistNetworkWriter(db_file=self.db_file)
+        db_writer = ArtistNetworkWriter(file_db=self.file_db)
         db_writer.community_hierarchy(df_hierarchy=df_hierarchy)
         # self.execute_sql_file(
         #     file_name="loading/sql/extract_community_dendrogram.sql"
@@ -605,7 +604,7 @@ class DBTransform(DBStorage):
                     ]
                 )
                 # df_write_attempts = df_write_attempts.append({'id_artist': row['id_artist'], 'qty_attempts': 1}, ignore_index=True)
-            derive = _derive.Artists(artists=artists, db_file=self.db_file)
+            derive = _derive.Artists(artists=artists, db_file=self.file_db)
             derive.process_masters = False
             derive.process()
             self._extract_artist_to_ignore()

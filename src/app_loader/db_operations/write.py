@@ -7,15 +7,15 @@ from app_loader.db_operations import DBStorage
 class CollectionWriter(DBStorage):
     """A class for storing collection item data
     """
-    def __init__(self, db_file) -> None:
-        super().__init__(db_file)
+    def __init__(self, file_db) -> None:
+        super().__init__(file_db)
         self.create_table_artist_write_attempts()
 
     def drop_tables(self) -> None:
         self.drop_existing_table(name_table='collection_items')
 
     def create_views(self) -> None:
-        db_con = sqlite3.connect(self.db_file)
+        db_con = sqlite3.connect(self.file_db)
         cursor = db_con.cursor()
         sql_file = open("loading/sql/views_collection.sql")
         sql_as_string = sql_file.read()
@@ -23,7 +23,7 @@ class CollectionWriter(DBStorage):
 
     def create_table_artist_write_attempts(self) -> None:
         if not self.table_exists('artist_write_attempts'):
-            db_con = sqlite3.connect(self.db_file)
+            db_con = sqlite3.connect(self.file_db)
             cursor = db_con.cursor()
             cursor.execute("CREATE TABLE artist_write_attempts ( id_artist INTEGER, qty_attempts INTEGER )")
             cursor.close()
@@ -61,15 +61,15 @@ class CollectionWriter(DBStorage):
 class ArtistsWriter(DBStorage):
     """A class for storing artist related data
     """
-    def __init__(self, db_file) -> None:
-        super().__init__(db_file)
+    def __init__(self, file_db) -> None:
+        super().__init__(file_db)
 
     def in_db(self, id_artist: int) -> bool:
         """Checks whether the artist is already in the database"""
         if self.table_exists(name_table='artist'):
-            db_con = sqlite3.connect(self.db_file)
+            db_con = sqlite3.connect(self.file_db)
             cursor = db_con.cursor()
-            cursor.execute("SELECT count(*) FROM artist WHERE id_artist=" + str(id_artist) + "")
+            cursor.execute(f"SELECT count(*) FROM artist WHERE id_artist={str(id_artist)}")
             does_exist = cursor.fetchone()[0] > 0
         else:
             does_exist = False
@@ -77,7 +77,7 @@ class ArtistsWriter(DBStorage):
 
     def create_table(self, name_table: str) -> None:
         """Creates artist related tables in the database if they don't exist"""
-        db_con = sqlite3.connect(self.db_file)
+        db_con = sqlite3.connect(self.file_db)
         cursor = db_con.cursor()
         if not self.table_exists(name_table=name_table):
             sql = ""
@@ -136,13 +136,13 @@ class ArtistsWriter(DBStorage):
 
 
 class MasterWriter(DBStorage):
-    def __init__(self, db_file) -> None:
-        super().__init__(db_file)
+    def __init__(self, file_db) -> None:
+        super().__init__(file_db)
 
     def in_db(self, id_master: int) -> bool:
         """Checks if the master is already in the database"""
         if self.table_exists(name_table='master'):
-            db_con = sqlite3.connect(self.db_file)
+            db_con = sqlite3.connect(self.file_db)
             cursor = db_con.cursor()
             cursor.execute("SELECT count(*) FROM master WHERE id_master=" + str(id_master) + "")
             does_exist = cursor.fetchone()[0] > 0
@@ -187,13 +187,13 @@ class MasterWriter(DBStorage):
 
 
 class ReleaseWriter(DBStorage):
-    def __init__(self, db_file) -> None:
-        super().__init__(db_file)
+    def __init__(self, file_db) -> None:
+        super().__init__(file_db)
 
     def in_db(self, id_release: int) -> bool:
         """Checks if the release is already in the database"""
         if self.table_exists(name_table='release'):
-            db_con = sqlite3.connect(self.db_file)
+            db_con = sqlite3.connect(self.file_db)
             cursor = db_con.cursor()
             cursor.execute("SELECT count(*) FROM release WHERE id_release=" + str(id_release) + "")
             does_exist = cursor.fetchone()[0] > 0
@@ -258,8 +258,8 @@ class ReleaseWriter(DBStorage):
 
 
 class ArtistNetworkWriter(DBStorage):
-    def __init__(self, db_file) -> None:
-        super().__init__(db_file)
+    def __init__(self, file_db) -> None:
+        super().__init__(file_db)
 
     def vertices(self, df_vertices: pl.DataFrame) -> None:
         pass

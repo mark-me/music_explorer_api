@@ -36,11 +36,11 @@ class ManageDB:
 
 
 class DBStorage():
-    def __init__(self, db_file) -> None:
-        self.db_file = db_file
+    def __init__(self, file_db) -> None:
+        self.file_db = file_db
 
     def create_view(self, name_view:str, sql_definition: str) -> None:
-        db_con = sqlite3.connect(self.db_file)
+        db_con = sqlite3.connect(self.file_db)
         cursor = db_con.cursor()
         sql = "CREATE VIEW " + name_view + " AS " + sql_definition +";"
         cursor.execute(sql)
@@ -48,21 +48,21 @@ class DBStorage():
         db_con.close()
 
     def drop_view(self, name_view: str) -> None:
-        db_con = sqlite3.connect(self.db_file)
+        db_con = sqlite3.connect(self.file_db)
         cursor = db_con.cursor()
         cursor.execute("DROP VIEW IF EXISTS " + name_view)
         db_con.commit()
         db_con.close()
 
     def execute_sql(self, sql: str) -> None:
-        db_con = sqlite3.connect(self.db_file)
+        db_con = sqlite3.connect(self.file_db)
         cursor = db_con.cursor()
         cursor.execute(sql)
         db_con.commit()
         db_con.close()
 
     def execute_sql_file(self, file_name: str) -> None:
-        db_con = sqlite3.connect(self.db_file)
+        db_con = sqlite3.connect(self.file_db)
         cursor = db_con.cursor()
         sql_file = open(file_name)
         sql_as_string = sql_file.read()
@@ -80,7 +80,7 @@ class DBStorage():
 
     def table_exists(self, name_table: str) -> bool:
         """Checks whether a table exists"""
-        db_con = sqlite3.connect(self.db_file)
+        db_con = sqlite3.connect(self.file_db)
         cursor = db_con.cursor()
         cursor.execute("SELECT count(name) FROM sqlite_master WHERE type='table' AND name='" + name_table + "'")
         does_exist = cursor.fetchone()[0]==1
@@ -89,20 +89,20 @@ class DBStorage():
 
     def column_exists(self, name_table: str, name_column: str) -> bool:
         """Checks whether a table column exists"""
-        db_con = sqlite3.connect(self.db_file)
+        db_con = sqlite3.connect(self.file_db)
         cursor = db_con.cursor()
         columns = [i[1] for i in cursor.execute(f"PRAGMA table_info({name_table})")]
         return name_column in columns
 
     def column_add(self, name_table: str, name_column: str, type_data: str) -> None:
         if not self.column_exists(name_table=name_table, name_column=name_column):
-            db_con = sqlite3.connect(self.db_file)
+            db_con = sqlite3.connect(self.file_db)
             cursor = db_con.cursor()
             cursor.execute(f"ALTER TABLE {name_table} ADD COLUMN {name_column} {type_data}")
 
     def view_exists(self, name_view: str) -> bool:
         """Checks whether a view exists"""
-        db_con = sqlite3.connect(self.db_file)
+        db_con = sqlite3.connect(self.file_db)
         cursor = db_con.cursor()
         cursor.execute("SELECT count(name) FROM sqlite_master WHERE type='view' AND name='" + name_view + "'")
         does_exist = cursor.fetchone()[0]==1
@@ -112,7 +112,7 @@ class DBStorage():
     def drop_existing_table(self, name_table: str) -> None:
         """Dropping a table"""
         if self.table_exists(name_table):
-            db_con = sqlite3.connect(self.db_file)
+            db_con = sqlite3.connect(self.file_db)
             cursor = db_con.cursor()
             cursor.execute("DROP TABLE " + name_table)
             db_con.commit()
@@ -120,26 +120,24 @@ class DBStorage():
 
     def store_replace(self, df: pl.DataFrame, name_table: str) -> None:
         """Storing data to a table"""
-        db_con = sqlite3.connect(self.db_file)
+        db_con = sqlite3.connect(self.file_db)
         df.to_sql(name=name_table, con=db_con, if_exists='replace', index=False)
         db_con.close()
 
     def store_append(self, df: pl.DataFrame, name_table: str) -> None:
-        db_con = sqlite3.connect(self.db_file)
+        db_con = sqlite3.connect(self.file_db)
         df.to_sql(name=name_table, con=db_con, if_exists='append', index=False)
         db_con.close()
 
     def read_table(self, name_table: str) -> list:
-        db_con = sqlite3.connect(self.db_file)
+        db_con = sqlite3.connect(self.file_db)
         sql = "SELECT * FROM " + name_table
         df = pl.read_database(sql, connection=db_con)
-        lst_rows = df.to_dicts()
         db_con.close()
-        return lst_rows
+        return df
 
     def read_sql(self, sql: str) -> list:
-        db_con = sqlite3.connect(self.db_file)
+        db_con = sqlite3.connect(self.file_db)
         df = pl.read_database(sql, connection=db_con)
-        lst_rows = df.to_dicts()
         db_con.close()
-        return lst_rows
+        return df
